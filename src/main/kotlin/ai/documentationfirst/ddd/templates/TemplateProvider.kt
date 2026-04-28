@@ -5,69 +5,69 @@ import java.time.Instant
 import java.time.LocalDate
 
 enum class AgentProfile(val label: String, val description: String) {
-    STRICT(
-        "Strict (Recommended)",
-        "No terminal commands. Agent displays commands as code blocks only. No rename/delete."
-    ),
-    STANDARD(
-        "Standard",
-        "Build/install forbidden. Read-only commands (grep, find, cat) and tests allowed."
-    ),
-    PERMISSIVE(
-        "Permissive",
-        "All terminal commands allowed. Agent may rename/delete with caution."
-    ),
+  STRICT(
+    "Strict (Recommended)",
+    "No terminal commands. Agent displays commands as code blocks only. No rename/delete."
+  ),
+  STANDARD(
+    "Standard",
+    "Build/install forbidden. Read-only commands (grep, find, cat) and tests allowed."
+  ),
+  PERMISSIVE(
+    "Permissive",
+    "All terminal commands allowed. Agent may rename/delete with caution."
+  ),
 }
 
 object TemplateProvider {
 
-    private fun today() = LocalDate.now().toString()
-    private fun nowIso() = Instant.now().toString()
+  private fun today() = LocalDate.now().toString()
+  private fun nowIso() = Instant.now().toString()
 
-    // ── Static templates (permanent files) ────────────────────────────────────
+  // ── Static templates (permanent files) ────────────────────────────────────
 
-    fun aiContextReadme(): String = """
+  fun aiContextReadme(): String = """
         # `.ai_context` — Documentation-Driven Development v2
 
-        Ce dossier est géré par le plugin **Documentation First** (JetBrains).
-        Il structure la collaboration entre le développeur et l'agent IA tout au long du projet.
+        This folder is managed by the **Documentation First** plugin (JetBrains).
+        It structures collaboration between the developer and the AI agent throughout the project.
 
         ---
 
-        ## Philosophie
+        ## Philosophy
 
-        La méthode repose sur un principe simple : **la documentation n'est pas un livrable, c'est un outil de travail**.
+        The method is based on a simple principle: **documentation is not a deliverable, it is a working tool**.
 
-        Le développeur et l'agent IA collaborent par **lecture et écriture de documents**.
-        - Le développeur écrit ce qu'il veut faire, comprend ou décide.
-        - L'agent lit, complète, affine, questionne, documente ce qu'il a fait.
-        - Ensemble, ils maintiennent une base documentaire vivante qui sert de mémoire au projet.
+        The developer and the AI agent collaborate by **reading and writing documents**.
+        - The developer writes what they want to do, understand or decide.
+        - The agent reads, completes, refines, questions, and documents what it has done.
+        - Together, they maintain a living documentation base that serves as the project's memory.
 
-        > Ce n'est pas l'agent qui décide — c'est le développeur qui pilote via les documents.
+        > It is not the agent who decides — it is the developer who drives through documents.
 
         ---
 
-        ## Comment travailler avec ce dossier
+        ## How to work with this folder
 
-        ### 1. Lire avant d'agir
-        Avant de démarrer une session de travail, l'agent **doit lire** :
-        - `CONTRACT.md` → les règles permanentes du projet et du développeur
-        - `CONTEXT.md` → l'objectif et les tâches du contexte en cours
-        - `documents/specification/` → les détails fonctionnels et architecturaux
-        - `documents/technical/` → les décisions techniques et bonnes pratiques
+        ### 1. Read before acting
+        Before starting a work session, the agent **must read**:
+        - `CONTRACT.md` → the permanent rules of the project and the developer
+        - `CONTEXT.md` → the objective and tasks of the current context
+        - `documents/specification/` → functional and architectural details
+        - `documents/technical/` → technical decisions and best practices
 
-        ### 2. Travailler par ajout de documents contextuels
-        - Une nouvelle contrainte technique → un fichier dans `documents/technical/`
-        - Un besoin fonctionnel précisé → un fichier dans `documents/specification/`
-        - Une tâche terminée → un fichier de synthèse dans `documents/done/`
+        ### 2. Work by adding contextual documents
+        - A new technical constraint → a file in `documents/technical/`
+        - A clarified functional need → a file in `documents/specification/`
+        - A completed task → a summary file in `documents/done/`
 
-        ### Convention `permanent-`
-        Un fichier dans `technical/` ou `specification/` préfixé par `permanent-` **ne sera pas effacé**
-        lors du passage à un nouveau contexte.
+        ### `permanent-` Convention
+        A file in `technical/` or `specification/` prefixed with `permanent-` **will not be deleted**
+        when switching to a new context.
 
-        ### 3. Clore un contexte avant de commiter
-        Un **contexte = une unité de travail = un commit Git**.
-        Committez `.ai_context/` avant de passer à un nouveau contexte.
+        ### 3. Close a context before committing
+        A **context = a unit of work = a Git commit**.
+        Commit `.ai_context/` before moving to a new context.
 
         ---
 
@@ -75,105 +75,105 @@ object TemplateProvider {
 
         ```
         .ai_context/
-        ├── README.md              ← ce fichier (permanent)
-        ├── CONTRACT.md            ← règles pour l'agent (permanent)
-        ├── CONTEXT.md             ← objectif et todo liste (contextuel)
-        ├── context.json           ← métadonnées machine (contextuel)
-        ├── history.log            ← journal des contextes passés (permanent)
+        ├── README.md              ← this file (permanent)
+        ├── CONTRACT.md            ← rules for the agent (permanent)
+        ├── CONTEXT.md             ← objective and todo list (contextual)
+        ├── context.json           ← machine metadata (contextual)
+        ├── history.log            ← past contexts journal (permanent)
         └── documents/
-            ├── done/              ← synthèses de l'agent (contextuel)
-            ├── specification/     ← specs fonctionnelles (permanent-* conservé)
-            └── technical/         ← décisions techniques (permanent-* conservé)
+            ├── done/              ← agent summaries (contextual)
+            ├── specification/     ← functional specs (permanent-* kept)
+            └── technical/         ← technical decisions (permanent-* kept)
         ```
 
         ---
 
-        *Géré par [Documentation First Plugin](https://documentationfirst.ai) — MIT License*
+        *Managed by [Documentation First Plugin](https://documentationfirst.ai) — MIT License*
     """.trimIndent()
 
-    fun contractMd(profile: AgentProfile): String {
-        val prohibitions = when (profile) {
-            AgentProfile.STRICT -> """
-                ## 🚫 PROHIBITIONS ABSOLUES
+  fun contractMd(profile: AgentProfile): String {
+    val prohibitions = when (profile) {
+      AgentProfile.STRICT -> """
+                ## 🚫 ABSOLUTE PROHIBITIONS
 
-                > Ces règles s'appliquent **sans exception**.
+                > These rules apply **without exception**.
 
-                1. **Ne jamais utiliser d'outil d'exécution de commandes terminal.**
-                   - Interdit : `npm install`, `npm run`, `ng build`, `git`, `node`, etc.
-                   - Si une commande est nécessaire, l'afficher en bloc de code — le développeur l'exécute lui-même.
-                2. **Ne jamais renommer ni supprimer de fichiers.**
-                3. **Ne jamais modifier des fichiers hors du workspace.**
+                1. **Never use any terminal command execution tool.**
+                   - Forbidden: `npm install`, `npm run`, `ng build`, `git`, `node`, etc.
+                   - If a command is needed, display it as a code block — the developer runs it themselves.
+                2. **Never rename or delete files.**
+                3. **Never modify files outside the workspace.**
             """.trimIndent()
 
-            AgentProfile.STANDARD -> """
+      AgentProfile.STANDARD -> """
                 ## ⚠️ RESTRICTIONS
 
-                1. **Ne jamais lancer de commandes build, install ou serve.**
-                   - Interdit : `npm install`, `npm run build`, `ng build`, `ng serve`, `git push`, etc.
-                   - Autorisé en lecture seule : `grep`, `find`, `cat`, `ls`
-                   - Commandes de test (`ng test`, `npm test`) autorisées.
-                2. **Ne jamais renommer ni supprimer de fichiers.**
-                3. **Ne jamais modifier des fichiers hors du workspace.**
+                1. **Never run build, install or serve commands.**
+                   - Forbidden: `npm install`, `npm run build`, `ng build`, `ng serve`, `git push`, etc.
+                   - Allowed read-only: `grep`, `find`, `cat`, `ls`
+                   - Test commands (`ng test`, `npm test`) are allowed.
+                2. **Never rename or delete files.**
+                3. **Never modify files outside the workspace.**
             """.trimIndent()
 
-            AgentProfile.PERMISSIVE -> """
-                ## ℹ️ RECOMMANDATIONS
+      AgentProfile.PERMISSIVE -> """
+                ## ℹ️ RECOMMENDATIONS
 
-                1. **Ne jamais modifier des fichiers hors du workspace.**
-                2. **Afficher les commandes destructives** (delete, rename, publish) en bloc de code pour relecture.
-                3. Les commandes build, install, test et serve peuvent être exécutées directement si nécessaire.
+                1. **Never modify files outside the workspace.**
+                2. **Display destructive commands** (delete, rename, publish) as a code block for review.
+                3. Build, install, test and serve commands may be executed directly if needed.
             """.trimIndent()
-        }
+    }
 
-        val permissions = when (profile) {
-            AgentProfile.STRICT -> """
-                ## ✅ Ce que l'agent est autorisé à faire
+    val permissions = when (profile) {
+      AgentProfile.STRICT -> """
+                ## ✅ What the agent is allowed to do
 
-                | Action | Autorisé | Notes |
+                | Action | Allowed | Notes |
                 |---|---|---|
-                | Modifier des fichiers existants | ✅ Oui | Sans confirmation préalable |
-                | Créer de nouveaux fichiers techniques | ✅ Oui | |
-                | Lire des fichiers du projet | ✅ Oui | |
-                | Rechercher dans le code | ✅ Oui | Lecture seule |
-                | Mettre à jour `.ai_context/` | ✅ Oui | |
-                | Exécuter des commandes terminal | ❌ Non | Afficher en bloc de code uniquement |
-                | Renommer ou supprimer des fichiers | ❌ Non | |
+                | Modify existing files | ✅ Yes | Without prior confirmation |
+                | Create new technical files | ✅ Yes | |
+                | Read project files | ✅ Yes | |
+                | Search through code | ✅ Yes | Read-only |
+                | Update `.ai_context/` | ✅ Yes | |
+                | Execute terminal commands | ❌ No | Display as code block only |
+                | Rename or delete files | ❌ No | |
             """.trimIndent()
 
-            AgentProfile.STANDARD -> """
-                ## ✅ Ce que l'agent est autorisé à faire
+      AgentProfile.STANDARD -> """
+                ## ✅ What the agent is allowed to do
 
-                | Action | Autorisé | Notes |
+                | Action | Allowed | Notes |
                 |---|---|---|
-                | Modifier des fichiers existants | ✅ Oui | |
-                | Créer de nouveaux fichiers | ✅ Oui | |
-                | Lire des fichiers du projet | ✅ Oui | |
-                | Commandes lecture seule (`grep`, `find`, `cat`) | ✅ Oui | |
-                | Lancer les tests (`npm test`, `ng test`) | ✅ Oui | |
-                | Commandes build / install / serve | ❌ Non | Afficher en bloc de code |
-                | Renommer ou supprimer des fichiers | ❌ Non | |
+                | Modify existing files | ✅ Yes | |
+                | Create new files | ✅ Yes | |
+                | Read project files | ✅ Yes | |
+                | Read-only commands (`grep`, `find`, `cat`) | ✅ Yes | |
+                | Run tests (`npm test`, `ng test`) | ✅ Yes | |
+                | Build / install / serve commands | ❌ No | Display as code block |
+                | Rename or delete files | ❌ No | |
             """.trimIndent()
 
-            AgentProfile.PERMISSIVE -> """
-                ## ✅ Ce que l'agent est autorisé à faire
+      AgentProfile.PERMISSIVE -> """
+                ## ✅ What the agent is allowed to do
 
-                | Action | Autorisé | Notes |
+                | Action | Allowed | Notes |
                 |---|---|---|
-                | Modifier / créer des fichiers | ✅ Oui | |
-                | Lire des fichiers | ✅ Oui | |
-                | Toutes commandes terminal | ✅ Oui | |
-                | Renommer / supprimer | ✅ Oui | Avec prudence |
-                | Modifier des fichiers hors workspace | ❌ Non | |
+                | Modify / create files | ✅ Yes | |
+                | Read files | ✅ Yes | |
+                | All terminal commands | ✅ Yes | |
+                | Rename / delete | ✅ Yes | With care |
+                | Modify files outside workspace | ❌ No | |
             """.trimIndent()
-        }
+    }
 
-        return """
-            # AI Agent — Contrat d'interaction
+    return """
+            # AI Agent — Interaction Contract
 
-            *Profil : **${profile.name.lowercase()}***
+            *Profile: **${profile.name.lowercase()}***
 
-            Ce fichier définit les règles d'interaction entre le développeur et l'agent IA sur ce projet.
-            **L'agent doit lire et respecter ce contrat avant toute action.**
+            This file defines the rules of interaction between the developer and the AI agent on this project.
+            **The agent must read and respect this contract before taking any action.**
 
             ---
 
@@ -185,31 +185,31 @@ object TemplateProvider {
 
             ---
 
-            ## 🧠 Préférences de communication
+            ## 🧠 Communication preferences
 
-            - Répondre en **français**
-            - Être **concis** : pas de répétition du code existant dans les explications
-            - Signaler les **erreurs préexistantes** séparément des erreurs introduites
-            - Ne pas demander de confirmation pour des changements évidents — **agir directement**
-            - En cas de doute sur le périmètre, **poser une seule question ciblée**
+            - Reply in **English**
+            - Be **concise**: do not repeat existing code in explanations
+            - Report **pre-existing errors** separately from errors introduced by modifications
+            - Do not ask for confirmation on obvious changes — **act directly**
+            - When in doubt about scope, **ask one focused question**
 
             ---
 
-            ## 📁 Documentation de référence
+            ## 📁 Reference documentation
 
-            Tout le contexte est centralisé dans [`.ai_context/`](./.ai_context/).
-            **Lire et suivre les directives de ces fichiers** avant toute modification.
+            All context is centralized in [`.ai_context/`](./.ai_context/).
+            **Read and follow the directives in these files** before any modification.
         """.trimIndent()
-    }
+  }
 
-    // ── Contextual templates ───────────────────────────────────────────────────
+  // ── Contextual templates ───────────────────────────────────────────────────
 
-    fun contextMd(title: String, description: String, todos: List<String>): String {
-        val todoLines = if (todos.isEmpty()) "- [ ] ..." else todos.joinToString("\n") { "- [ ] $it" }
-        return """
-            # Contexte — $title
+  fun contextMd(title: String, description: String, todos: List<String>): String {
+    val todoLines = if (todos.isEmpty()) "- [ ] ..." else todos.joinToString("\n") { "- [ ] $it" }
+    return """
+            # Context — $title
 
-            *Démarré : ${today()}*
+            *Started: ${today()}*
 
             ---
 
@@ -223,97 +223,97 @@ object TemplateProvider {
 
             $todoLines
         """.trimIndent()
-    }
+  }
 
-    fun contextJson(title: String, description: String): String {
-        val escaped = { s: String -> s.replace("\"", "\\\"") }
-        return """{"title":"${escaped(title)}","description":"${escaped(description)}","startedAt":"${nowIso()}"}"""
-    }
+  fun contextJson(title: String, description: String): String {
+    val escaped = { s: String -> s.replace("\"", "\\\"") }
+    return """{"title":"${escaped(title)}","description":"${escaped(description)}","startedAt":"${nowIso()}"}"""
+  }
 
-    fun projectReadme(projectName: String): String = """
+  fun projectReadme(projectName: String): String = """
         # For AI Agent :
 
         Read all [context](./.ai_context) for context and needs.
-        L'agent doit appliquer les conditions spécifiées par le fichier CONTRACT.md
-        Le contexte du développement actuel est présenté dans CONTEXT.md et tous les fichiers du répertoire `documents/`.
-        Le sous-répertoire `done/` contient des fichiers MD rédigés par l'agent expliquant ce qui a été fait dans ce contexte.
-        Le sous-répertoire `technical/` contient des bonnes pratiques et conseils techniques.
-        Le sous-répertoire `specification/` contient des détails fonctionnels et d'architecture.
+        The agent must apply the conditions specified in CONTRACT.md.
+        The current development context is presented in CONTEXT.md and all files in the `documents/` directory.
+        The `done/` subdirectory contains MD files written by the agent explaining what was done in this context.
+        The `technical/` subdirectory contains best practices and technical guidelines.
+        The `specification/` subdirectory contains functional and architectural details.
 
         ---
 
         # $projectName
 
-        > *(Décrivez votre projet ici)*
+        > *(Describe your project here)*
     """.trimIndent()
 
-    // ── Scaffold helpers ───────────────────────────────────────────────────────
+  // ── Scaffold helpers ───────────────────────────────────────────────────────
 
-    fun scaffoldInit(
-        aiContextRoot: File,
-        profile: AgentProfile,
-        title: String,
-        description: String,
-        todos: List<String>
-    ) {
-        aiContextRoot.mkdirs()
-        for (sub in listOf("done", "specification", "technical")) {
-            File(aiContextRoot, "documents/$sub").mkdirs()
-            File(aiContextRoot, "documents/$sub/.gitkeep").also {
-                if (!it.exists()) it.writeText("")
-            }
-        }
-        File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
-        File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
-        File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
-        File(aiContextRoot, "context.json").writeText(contextJson(title, description))
+  fun scaffoldInit(
+    aiContextRoot: File,
+    profile: AgentProfile,
+    title: String,
+    description: String,
+    todos: List<String>
+  ) {
+    aiContextRoot.mkdirs()
+    for (sub in listOf("done", "specification", "technical")) {
+      File(aiContextRoot, "documents/$sub").mkdirs()
+      File(aiContextRoot, "documents/$sub/.gitkeep").also {
+        if (!it.exists()) it.writeText("")
+      }
+    }
+    File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
+    File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
+    File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
+    File(aiContextRoot, "context.json").writeText(contextJson(title, description))
 
-        // Create or update project README.md at root
-        val projectRoot = aiContextRoot.parentFile
-        val projectReadme = File(projectRoot, "README.md")
-        if (!projectReadme.exists()) {
-            projectReadme.writeText(projectReadme(projectRoot.name))
-        } else if (!projectReadme.readText().contains(".ai_context")) {
-            val agentHeader = """
+    // Create or update project README.md at root
+    val projectRoot = aiContextRoot.parentFile
+    val projectReadme = File(projectRoot, "README.md")
+    if (!projectReadme.exists()) {
+      projectReadme.writeText(projectReadme(projectRoot.name))
+    } else if (!projectReadme.readText().contains(".ai_context")) {
+      val agentHeader = """
                 # For AI Agent :
 
                 Read all [context](./.ai_context) for context and needs.
-                L'agent doit appliquer les conditions spécifiées par le fichier CONTRACT.md
-                Le contexte du développement actuel est présenté dans CONTEXT.md et tous les fichiers du répertoire `documents/`.
+                The agent must apply the conditions specified in CONTRACT.md.
+                The current development context is presented in CONTEXT.md and all files in the `documents/` directory.
 
                 ---
 
             """.trimIndent()
-            projectReadme.writeText(agentHeader + "\n" + projectReadme.readText())
-        }
+      projectReadme.writeText(agentHeader + "\n" + projectReadme.readText())
+    }
+  }
+
+  fun scaffoldNewContext(
+    aiContextRoot: File,
+    title: String,
+    description: String,
+    todos: List<String>
+  ) {
+    // Archive old context into history.log
+    val contextJsonFile = File(aiContextRoot, "context.json")
+    if (contextJsonFile.exists()) {
+      val oldJson = contextJsonFile.readText().trim().trimEnd('}')
+      val historyLine = """$oldJson,"endedAt":"${nowIso()}"}"""
+      File(aiContextRoot, "history.log").appendText(historyLine + "\n")
     }
 
-    fun scaffoldNewContext(
-        aiContextRoot: File,
-        title: String,
-        description: String,
-        todos: List<String>
-    ) {
-        // Archive old context into history.log
-        val contextJsonFile = File(aiContextRoot, "context.json")
-        if (contextJsonFile.exists()) {
-            val oldJson = contextJsonFile.readText().trim().trimEnd('}')
-            val historyLine = """$oldJson,"endedAt":"${nowIso()}"}"""
-            File(aiContextRoot, "history.log").appendText(historyLine + "\n")
-        }
+    // Clear done/ entirely
+    File(aiContextRoot, "documents/done").listFiles()?.forEach { it.delete() }
 
-        // Clear done/ entirely
-        File(aiContextRoot, "documents/done").listFiles()?.forEach { it.delete() }
-
-        // Clear specification/ and technical/ except permanent-*
-        for (sub in listOf("specification", "technical")) {
-            File(aiContextRoot, "documents/$sub").listFiles()
-                ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
-                ?.forEach { it.delete() }
-        }
-
-        // Write new contextual files
-        File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
-        File(aiContextRoot, "context.json").writeText(contextJson(title, description))
+    // Clear specification/ and technical/ except permanent-*
+    for (sub in listOf("specification", "technical")) {
+      File(aiContextRoot, "documents/$sub").listFiles()
+        ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
+        ?.forEach { it.delete() }
     }
+
+    // Write new contextual files
+    File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
+    File(aiContextRoot, "context.json").writeText(contextJson(title, description))
+  }
 }
