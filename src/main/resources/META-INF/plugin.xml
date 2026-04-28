@@ -1,0 +1,63 @@
+<idea-plugin>
+    <id>ai.documentationfirst.ddd</id>
+    <name>Documentation First</name>
+    <version>1.0.0</version>
+    <vendor url="https://documentationfirst.ai" email="contact@documentationfirst.ai">
+        Documentation First
+    </vendor>
+    <description><![CDATA[
+        Make Documentation-Driven Development v2 a first-class AI citizen of your IDE.<br/><br/>
+        <b>Features:</b><br/>
+        <ul>
+            <li>Auto-detects <code>.ai_context/</code> on project open</li>
+            <li>Initialize and manage your AI context (title, description, todo list)</li>
+            <li>Documents tree: specification, technical, done — with permanent-* support</li>
+            <li>Clickable todo list synced with CONTEXT.md</li>
+            <li>Context history in history.log (JSON Lines)</li>
+        </ul>
+        <br/>
+        Learn more at <a href="https://documentationfirst.ai">documentationfirst.ai</a>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="Documentation first"
+            anchor="right"
+            factoryClass="ai.documentationfirst.ddd.toolwindow.DddToolWindowFactory"
+            icon="/assets/icon.svg"
+        />
+        <notificationGroup
+            id="DDD Notifications"
+            displayType="BALLOON"
+        />
+        <!-- File watcher service for .md files in .ai_context/ -->
+        <projectService
+            serviceImplementation="ai.documentationfirst.ddd.watcher.DddFileWatcher"
+        />
+        <postStartupActivity
+            implementation="ai.documentationfirst.ddd.startup.DddProjectStartupActivity"
+        />
+    </extensions>
+
+    <actions>
+        <group id="DddActionGroup" text="Documentation First" description="Documentation-Driven Development v2" popup="true">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="NewGroup" anchor="last"/>
+
+            <action
+                id="ddd.initContext"
+                class="ai.documentationfirst.ddd.actions.InitContextAction"
+                text="Initialize Context"
+                description="Initialize .ai_context/ with templates and first context"
+            />
+            <action
+                id="ddd.newContext"
+                class="ai.documentationfirst.ddd.actions.NewContextAction"
+                text="New Context"
+                description="Archive current context and start a new one"
+            />
+        </group>
+    </actions>
+</idea-plugin>
