@@ -1,6 +1,7 @@
 package ai.documentationfirst.ddd.toolwindow
 
 import ai.documentationfirst.ddd.actions.NewDocumentAction
+import ai.documentationfirst.ddd.actions.NewSkillAction
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -157,17 +158,31 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                     val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
                     val file = node.userObject as? File ?: return
                     if (file.isDirectory) {
+                        val isSkills = file.name == "skills"
                         val menu = JPopupMenu()
-                        menu.add(JMenuItem("New file .md").apply {
-                            icon = AllIcons.FileTypes.Text
-                            addActionListener {
-                                NewDocumentAction(file, project).let { action ->
-                                    ActionManager.getInstance().tryToExecute(
-                                        action, null, null, ActionPlaces.POPUP, true
-                                    )
+                        if (isSkills) {
+                            menu.add(JMenuItem("New skill .md").apply {
+                                icon = AllIcons.Nodes.Editorconfig
+                                addActionListener {
+                                    NewSkillAction(file, project).let { action ->
+                                        ActionManager.getInstance().tryToExecute(
+                                            action, null, null, ActionPlaces.POPUP, true
+                                        )
+                                    }
                                 }
-                            }
-                        })
+                            })
+                        } else {
+                            menu.add(JMenuItem("New file .md").apply {
+                                icon = AllIcons.FileTypes.Text
+                                addActionListener {
+                                    NewDocumentAction(file, project).let { action ->
+                                        ActionManager.getInstance().tryToExecute(
+                                            action, null, null, ActionPlaces.POPUP, true
+                                        )
+                                    }
+                                }
+                            })
+                        }
                         menu.show(this@apply, e.x, e.y)
                     }
                 }
@@ -338,6 +353,7 @@ class DddTreeCellRenderer : DefaultTreeCellRenderer() {
         text = if (isPermanent) file.name.removePrefix("permanent-") else file.name
 
         icon = when {
+            file.isDirectory && file.name == "skills" -> AllIcons.Nodes.Editorconfig
             file.isDirectory -> AllIcons.Nodes.Folder
             file.extension == "md" -> AllIcons.FileTypes.Text
             else -> AllIcons.FileTypes.Unknown

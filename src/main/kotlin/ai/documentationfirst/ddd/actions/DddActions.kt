@@ -121,3 +121,31 @@ class NewDocumentAction(private val targetDir: File, private val project: com.in
         DddToolWindowFactory.refresh(project)
     }
 }
+
+// ── New Skill (right-click on skills/ in tree) ────────────────────────────────
+
+class NewSkillAction(private val skillsDir: File, private val project: com.intellij.openapi.project.Project) :
+    AnAction("Nouveau skill .md", null, AllIcons.Nodes.Editorconfig) {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val name = askInput(
+            project,
+            "Nom du skill",
+            "ex: permanent-dev-typescript ou api-design-rules"
+        ) ?: return
+        val file = File(skillsDir, "$name.md")
+        if (!file.exists()) {
+            val displayName = name.removePrefix("permanent-")
+            file.writeText(
+                "# Skill — $displayName\n\n" +
+                "*Créé : ${java.time.LocalDate.now()}*\n\n---\n\n" +
+                "## Rôle\n\n\n\n## Règles\n\n\n"
+            )
+        }
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(skillsDir)?.refresh(true, true)
+        openFile(project, file)
+        DddToolWindowFactory.refresh(project)
+    }
+}
+

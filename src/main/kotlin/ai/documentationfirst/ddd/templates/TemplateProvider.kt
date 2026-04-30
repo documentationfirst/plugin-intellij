@@ -258,11 +258,15 @@ object TemplateProvider {
     todos: List<String>
    ) {
      aiContextRoot.mkdirs()
-     for (sub in listOf("done", "specification", "technical", "skills")) {
+     for (sub in listOf("done", "specification", "technical")) {
        File(aiContextRoot, "documents/$sub").mkdirs()
        File(aiContextRoot, "documents/$sub/.gitkeep").also {
          if (!it.exists()) it.writeText("")
        }
+     }
+     File(aiContextRoot, "skills").mkdirs()
+     File(aiContextRoot, "skills/.gitkeep").also {
+       if (!it.exists()) it.writeText("")
      }
      File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
     File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
