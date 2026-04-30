@@ -80,6 +80,7 @@ object TemplateProvider {
         ├── CONTEXT.md             ← objective and todo list (contextual)
         ├── context.json           ← machine metadata (contextual)
         ├── history.log            ← past contexts journal (permanent)
+        ├── skills/                ← skills and competencies (permanent-* kept)
         └── documents/
             ├── done/              ← agent summaries (contextual)
             ├── specification/     ← functional specs (permanent-* kept)
@@ -255,15 +256,15 @@ object TemplateProvider {
     title: String,
     description: String,
     todos: List<String>
-  ) {
-    aiContextRoot.mkdirs()
-    for (sub in listOf("done", "specification", "technical")) {
-      File(aiContextRoot, "documents/$sub").mkdirs()
-      File(aiContextRoot, "documents/$sub/.gitkeep").also {
-        if (!it.exists()) it.writeText("")
-      }
-    }
-    File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
+   ) {
+     aiContextRoot.mkdirs()
+     for (sub in listOf("done", "specification", "technical", "skills")) {
+       File(aiContextRoot, "documents/$sub").mkdirs()
+       File(aiContextRoot, "documents/$sub/.gitkeep").also {
+         if (!it.exists()) it.writeText("")
+       }
+     }
+     File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
     File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
     File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
     File(aiContextRoot, "context.json").writeText(contextJson(title, description))
@@ -302,15 +303,16 @@ object TemplateProvider {
       File(aiContextRoot, "history.log").appendText(historyLine + "\n")
     }
 
-    // Clear done/ entirely
-    File(aiContextRoot, "documents/done").listFiles()?.forEach { it.delete() }
+     // Clear done/ entirely
+     File(aiContextRoot, "documents/done").listFiles()?.forEach { it.delete() }
 
-    // Clear specification/ and technical/ except permanent-*
-    for (sub in listOf("specification", "technical")) {
-      File(aiContextRoot, "documents/$sub").listFiles()
-        ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
-        ?.forEach { it.delete() }
-    }
+     // Clear specification/, technical/, and skills/ except permanent-*
+     for (sub in listOf("specification", "technical", "skills")) {
+       val dir = if (sub == "skills") File(aiContextRoot, sub) else File(aiContextRoot, "documents/$sub")
+       dir.listFiles()
+         ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
+         ?.forEach { it.delete() }
+     }
 
     // Write new contextual files
     File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))

@@ -188,8 +188,8 @@ class AgentComplianceTest {
 
         @Test fun `allows terminal commands explicitly`() {
             assertTrue(
-                content.contains("build") && content.contains("install"),
-                "Permissive should explicitly allow build/install"
+                content.contains("All terminal commands"),
+                "Permissive should explicitly allow all terminal commands"
             )
         }
 
@@ -237,11 +237,11 @@ class AgentComplianceTest {
 
     @ParameterizedTest
     @EnumSource(AgentProfile::class)
-    fun `always instructs agent to reply in French`(profile: AgentProfile) {
+    fun `always instructs agent to reply in English`(profile: AgentProfile) {
         val content = generateContract(profile)
         assertTrue(
-            content.contains("français") || content.contains("French"),
-            "Profile ${profile.name} must instruct agent to reply in French"
+            content.contains("english") || content.contains("English"),
+            "Profile ${profile.name} must instruct agent to reply in English"
         )
     }
 }

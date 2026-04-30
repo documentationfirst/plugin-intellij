@@ -104,7 +104,7 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
             val buttonsPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
                 isOpaque = false
-                add(makeToolbarButton("+ Nouveau contexte") {
+                add(makeToolbarButton("+ New context") {
                     ActionManager.getInstance().tryToExecute(
                         ActionManager.getInstance().getAction("ddd.newContext"),
                         null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
@@ -113,7 +113,7 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
             }
             topPanel.add(buttonsPanel, BorderLayout.WEST)
         } else {
-            val btn = JButton("⚡ Initialiser le contexte").apply {
+            val btn = JButton("⚡ Initialize a context").apply {
                 foreground = Color.WHITE
                 background = Color(204, 102, 0)
                 isBorderPainted = false
@@ -158,7 +158,7 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                     val file = node.userObject as? File ?: return
                     if (file.isDirectory) {
                         val menu = JPopupMenu()
-                        menu.add(JMenuItem("Nouveau fichier .md").apply {
+                        menu.add(JMenuItem("New file .md").apply {
                             icon = AllIcons.FileTypes.Text
                             addActionListener {
                                 NewDocumentAction(file, project).let { action ->
@@ -177,9 +177,25 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
 
     private fun buildTreeNode(): DefaultMutableTreeNode {
         val root = DefaultMutableTreeNode(".ai_context")
-        val aiContextRoot = project.basePath?.let { File(it, ".ai_context/documents") }
+        val aiContextRoot = project.basePath?.let { File(it, ".ai_context") }
         if (aiContextRoot == null || !aiContextRoot.exists()) return root
-        addChildren(root, aiContextRoot)
+
+        // Add documents/ subdirectory
+        val documentsDir = File(aiContextRoot, "documents")
+        if (documentsDir.exists()) {
+            val documentsNode = DefaultMutableTreeNode(documentsDir)
+            root.add(documentsNode)
+            addChildren(documentsNode, documentsDir)
+        }
+
+        // Add skills/ subdirectory
+        val skillsDir = File(aiContextRoot, "skills")
+        if (skillsDir.exists()) {
+            val skillsNode = DefaultMutableTreeNode(skillsDir)
+            root.add(skillsNode)
+            addChildren(skillsNode, skillsDir)
+        }
+
         return root
     }
 
@@ -228,7 +244,7 @@ class ContextPanel(private val project: Project) : JPanel(BorderLayout()) {
         val contextMd = File(aiContextRoot, "CONTEXT.md")
 
         if (!contextJson.exists() || !contextMd.exists()) {
-            add(JLabel("  Aucun contexte initialisé.", AllIcons.General.Information, SwingConstants.LEFT), BorderLayout.CENTER)
+            add(JLabel("  No context initialized.", AllIcons.General.Information, SwingConstants.LEFT), BorderLayout.CENTER)
             revalidate(); repaint()
             return
         }

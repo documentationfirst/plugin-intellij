@@ -203,7 +203,7 @@ class TemplateProviderTest {
     fun `contractMd permissive allows terminal commands`() {
         val content = TemplateProvider.contractMd(AgentProfile.PERMISSIVE)
         assertTrue(content.contains("permissive"))
-        assertTrue(content.contains("build") && content.contains("install"))
+        assertTrue(content.contains("All terminal commands"))
     }
 
     @Test

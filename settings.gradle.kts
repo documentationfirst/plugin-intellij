@@ -1,2 +1,2 @@
-rootProject.name = "ddd-plugin-jetbrains"
+rootProject.name = "plugin-intellij"
 
