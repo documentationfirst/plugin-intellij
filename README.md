@@ -7,7 +7,11 @@ Le sous-répertoire "done" contiendra des fichiers MD rédigés par l'agent expl
 Le sous-répertoire "technical" contient des bonnes pratiques et conseils techniques dans ce contexte.
 Le sous-répertoire "specification" contient des détails fonctionnels et d'architecture, ainsi que les besoins détaillés.
 
-# DDD — Documentation-Driven Development (JetBrains Plugin)
+# DDD — Documentation-Driven Development for AI (JetBrains Plugin)
+
+<div align="center">
+    <img src="d-ai.jpg" alt="Documentation-Driven Development" width="260" style="border-radius: 50%; overflow: hidden;" />
+</div>
 
 [![JetBrains Marketplace](https://img.shields.io/badge/JetBrains%20Marketplace-coming%20soon-fe2857?style=flat-square)](https://plugins.jetbrains.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
