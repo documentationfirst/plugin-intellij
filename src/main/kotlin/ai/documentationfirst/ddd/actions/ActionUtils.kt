@@ -56,8 +56,8 @@ data class ContextInput(
     val todos: List<String>
 )
 
-fun askContextInput(project: Project, titleLabel: String = "Nouveau contexte"): ContextInput? {
-    val titleField = JBTextField(30).apply { emptyText.text = "ex: Refonte authentification" }
+fun askContextInput(project: Project, titleLabel: String = "New context"): ContextInput? {
+    val titleField = JBTextField(30).apply { emptyText.text = "e.g. Authentication refactor" }
     val descArea = JTextArea(3, 30).apply {
         lineWrap = true
         wrapStyleWord = true
@@ -77,19 +77,19 @@ fun askContextInput(project: Project, titleLabel: String = "Nouveau contexte"): 
     }
     val panel = JPanel(GridBagLayout()).apply {
         gbc.gridy = 0; gbc.weighty = 0.0; gbc.fill = GridBagConstraints.HORIZONTAL
-        add(JLabel("Titre *"), gbc)
+        add(JLabel("Title *"), gbc)
         gbc.gridy = 1; add(titleField, gbc)
         gbc.gridy = 2; add(JLabel("Description"), gbc)
         gbc.gridy = 3; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.3
         add(JScrollPane(descArea), gbc)
         gbc.gridy = 4; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weighty = 0.0
-        add(JLabel("Todo liste (une tâche par ligne)"), gbc)
+        add(JLabel("Todo list (one task per line)"), gbc)
         gbc.gridy = 5; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 0.7
         add(JScrollPane(todosArea), gbc)
     }
 
     val builder = DialogBuilder(project).apply {
-        setTitle("Documentation First — $titleLabel")
+        setTitle("Documentation First - $titleLabel")
         setCenterPanel(panel)
         addOkAction()
         addCancelAction()
@@ -113,7 +113,7 @@ fun requireAiContextRoot(project: Project): File? {
     if (!aiContextRoot.exists()) {
         DddNotifications.showError(
             project,
-            "Aucun dossier <code>.ai_context/</code> trouvé. Lancez <b>Initialize Context</b> d'abord."
+            "No <code>.ai_context/</code> folder found. Run <b>Initialize Context</b> first."
         )
         return null
     }

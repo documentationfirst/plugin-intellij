@@ -102,8 +102,8 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
         DddToolWindowFactory.refresh(project)
 
         DddNotifications.showInfo(
-            project, "DDD initialisé ✅",
-            "Stack: <b>${DddDetector.check(project).stack.label}</b> — Profil: <b>${profile.name.lowercase()}</b>"
+            project, "DDD initialized ✅",
+            "Stack: <b>${DddDetector.check(project).stack.label}</b> — Profile: <b>${profile.name.lowercase()}</b>"
         )
     }
 
@@ -124,10 +124,10 @@ class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
 
         val confirm = Messages.showOkCancelDialog(
             project,
-            "vision.md va être réécrite. steps/ va être réinitialisé. tasks/ (non-permanent) va être vidé.\n" +
-            "CONTEXT.md et skills/ sont conservés.\n\nAssurez-vous d'avoir commité d'abord.",
-            "⚠️ Nouvelle Vision",
-            "Continuer quand même", "Annuler",
+            "vision.md will be rewritten. steps/ will be reset. tasks/ (non-permanent) will be cleared.\n" +
+            "CONTEXT.md and skills/ are preserved.\n\nMake sure you have committed first.",
+            "⚠️ New Vision",
+            "Continue anyway", "Cancel",
             Messages.getWarningIcon()
         )
         if (confirm != Messages.OK) return
@@ -136,11 +136,11 @@ class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
         val visionField = JBTextField(50).apply { emptyText.text = "e.g. Expand to all major IDE platforms" }
         val visionPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            add(JLabel("Nouvelle vision produit (semi-permanent):"))
+            add(JLabel("New product vision (semi-permanent):"))
             add(visionField)
         }
         val visionDialog = DialogBuilder(project).apply {
-            setTitle("Nouvelle Vision (1/3)")
+            setTitle("New Vision (1/3)")
             setCenterPanel(visionPanel); addOkAction(); addCancelAction()
         }
         if (!visionDialog.showAndGet()) return
@@ -153,13 +153,13 @@ class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
             val descField = JBTextField(40)
             val stepPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                add(JLabel("Step ${steps.size + 1} (laissez vide pour terminer):"))
+                add(JLabel("Step ${steps.size + 1} (leave empty to finish):"))
                 add(nameField)
                 add(JLabel("Description:"))
                 add(descField)
             }
             val stepDialog = DialogBuilder(project).apply {
-                setTitle("Nouvelle Vision (2/3) — Steps")
+                setTitle("New Vision (2/3) — Steps")
                 setCenterPanel(stepPanel); addOkAction(); addCancelAction()
             }
             if (!stepDialog.showAndGet()) break
@@ -169,13 +169,13 @@ class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
         }
 
         // First task
-        val input = askContextInput(project, "Nouvelle Vision (3/3) — Première tâche") ?: return
+        val input = askContextInput(project, "New Vision (3/3) — First task") ?: return
 
         TemplateProvider.scaffoldNewVision(aiContextRoot, vision, steps, input.title, input.description, input.todos)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
         DddToolWindowFactory.refresh(project)
 
-        DddNotifications.showInfo(project, "Nouvelle vision démarrée ✅", "<b>$vision</b>")
+        DddNotifications.showInfo(project, "New vision started ✅", "<b>$vision</b>")
     }
 
     override fun update(e: AnActionEvent) {
@@ -195,9 +195,9 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
 
         val confirm = Messages.showOkCancelDialog(
             project,
-            "tasks/ (non-permanent) va être vidé.\nvision.md, steps/, CONTEXT.md et skills/ sont conservés.\n\nAssurez-vous d'avoir commité d'abord.",
-            "⚠️ Nouvelles Tasks",
-            "Continuer quand même", "Annuler",
+            "tasks/ (non-permanent) will be cleared.\n\nMake sure you have committed first.",
+            "⚠️ New Tasks",
+            "Continue anyway", "Cancel",
             Messages.getWarningIcon()
         )
         if (confirm != Messages.OK) return
@@ -216,11 +216,11 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
           } catch (_: Exception) {}
         }
 
-        val noneLabel = "(aucun) — aucun step achevé"
+        val noneLabel = "(none) — no step completed"
         val stepChoices = listOf(noneLabel) + pendingSteps.map { "${it.name}  —  ${it.desc}" }
         val stepList = JBList(stepChoices).apply { selectedIndex = 0 }
         val stepDialog = DialogBuilder(project).apply {
-          setTitle("Nouvelle Task (1/3) — Un step vient-il d'être achevé ?")
+          setTitle("New Task (1/3) — Was a step just completed?")
           setCenterPanel(JScrollPane(stepList))
           addOkAction(); addCancelAction()
         }
@@ -229,15 +229,15 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
         val completedStep = if (selectedLabel == noneLabel) "" else pendingSteps.getOrNull(stepList.selectedIndex - 1)?.name ?: ""
 
         // New task
-        val input = askContextInput(project, "Nouvelles Tasks (2/3)") ?: return
+        val input = askContextInput(project, "New Tasks (2/3)") ?: return
 
         TemplateProvider.scaffoldNewTask(aiContextRoot, completedStep, input.title, input.description, input.todos)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
         DddToolWindowFactory.refresh(project)
 
-        val msg = if (completedStep.isNotBlank()) "Step achevé: <b>$completedStep</b> — Nouvelle tâche: <b>${input.title}</b>"
-                  else "Nouvelle tâche: <b>${input.title}</b>"
-        DddNotifications.showInfo(project, "Nouvelles tasks démarrées ✅", msg)
+        val msg = if (completedStep.isNotBlank()) "Step completed: <b>$completedStep</b> — New task: <b>${input.title}</b>"
+                  else "New task: <b>${input.title}</b>"
+        DddNotifications.showInfo(project, "New tasks started ✅", msg)
     }
 
     override fun update(e: AnActionEvent) {
@@ -249,13 +249,13 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
 // ── New Document (right-click in tree) ───────────────────────────────────────
 
 class NewDocumentAction(private val targetDir: File, private val project: com.intellij.openapi.project.Project) :
-    AnAction("Nouveau fichier .md", null, AllIcons.FileTypes.Text) {
+    AnAction("New .md file", null, AllIcons.FileTypes.Text) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
-        val name = askInput(project, "Nom du fichier", "ex: my-decision ou permanent-conventions") ?: return
+        val name = askInput(project, "File name", "e.g. my-decision or permanent-conventions") ?: return
         val file = File(targetDir, "$name.md")
-        if (!file.exists()) file.writeText("# $name\n\n*Créé : ${java.time.LocalDate.now()}*\n\n---\n\n")
+        if (!file.exists()) file.writeText("# $name\n\n*Created: ${java.time.LocalDate.now()}*\n\n---\n\n")
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetDir)?.refresh(true, true)
         openFile(project, file)
         DddToolWindowFactory.refresh(project)
@@ -265,22 +265,22 @@ class NewDocumentAction(private val targetDir: File, private val project: com.in
 // ── New Skill (right-click on skills/ in tree) ────────────────────────────────
 
 class NewSkillAction(private val skillsDir: File, private val project: com.intellij.openapi.project.Project) :
-    AnAction("Nouveau skill .md", null, AllIcons.Nodes.Editorconfig) {
+    AnAction("New skill .md", null, AllIcons.Nodes.Editorconfig) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
         val name = askInput(
             project,
-            "Nom du skill",
-            "ex: permanent-dev-typescript ou api-design-rules"
+            "Skill name",
+            "e.g. permanent-dev-typescript or api-design-rules"
         ) ?: return
         val file = File(skillsDir, "$name.md")
         if (!file.exists()) {
             val displayName = name.removePrefix("permanent-")
             file.writeText(
                 "# Skill — $displayName\n\n" +
-                "*Créé : ${java.time.LocalDate.now()}*\n\n---\n\n" +
-                "## Rôle\n\n\n\n## Règles\n\n\n"
+                "*Created: ${java.time.LocalDate.now()}*\n\n---\n\n" +
+                "## Role\n\n\n\n## Rules\n\n\n"
             )
         }
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(skillsDir)?.refresh(true, true)

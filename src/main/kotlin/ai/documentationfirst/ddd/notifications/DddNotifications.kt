@@ -18,8 +18,8 @@ object DddNotifications {
         NotificationGroupManager.getInstance()
             .getNotificationGroup(GROUP_ID)
             .createNotification(
-                "Documentation First — Prêt ✅",
-                ".ai_context/ détecté — stack : <b>${stack.label}</b>",
+                "Documentation First - Ready ✅",
+                ".ai_context/ detected - stack: <b>${stack.label}</b>",
                 NotificationType.INFORMATION
             )
             .notify(project)
@@ -29,12 +29,12 @@ object DddNotifications {
         val notification = NotificationGroupManager.getInstance()
             .getNotificationGroup(GROUP_ID)
             .createNotification(
-                "Documentation First — Aucun contexte",
-                "Aucun dossier <code>.ai_context/</code> trouvé dans ce projet. Initialiser ?",
+                "Documentation First - No context",
+                "No <code>.ai_context/</code> folder found in this project. Initialize?",
                 NotificationType.WARNING
             )
 
-        notification.addAction(object : AnAction("Initialiser") {
+        notification.addAction(object : AnAction("Initialize") {
             override fun actionPerformed(e: AnActionEvent) {
                 notification.expire()
                 val frame = WindowManager.getInstance().getFrame(project) ?: return
@@ -56,7 +56,7 @@ object DddNotifications {
     fun showError(project: Project, message: String) {
         NotificationGroupManager.getInstance()
             .getNotificationGroup(GROUP_ID)
-            .createNotification("Documentation First — Erreur", message, NotificationType.ERROR)
+            .createNotification("Documentation First - Error", message, NotificationType.ERROR)
             .notify(project)
     }
 }

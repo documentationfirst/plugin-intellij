@@ -22,7 +22,6 @@ dependencies {
         intellijIdeaCommunity("2024.3")
         pluginVerifier()
         zipSigner()
-        instrumentationTools()
     }
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -31,7 +30,7 @@ dependencies {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "DDD2 — Documentation-Driven Development v2"
+        name = "documentationfirst - Documentation-Driven Development for agentic AI"
         version = "1.0.0"
         description = """
             Make Documentation-Driven Development a first-class AI citizen of your IDE.
@@ -48,6 +47,12 @@ intellijPlatform {
             name = "Documentation First"
             url = "https://documentationfirst.ai"
             email = "contact@documentationfirst.ai"
+        }
+    }
+
+    pluginVerification {
+        ides {
+            ide("IC", "2024.3")
         }
     }
 

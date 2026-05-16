@@ -54,9 +54,9 @@
             />
             <action
                 id="ddd.newContext"
-                class="ai.documentationfirst.ddd.actions.NewContextAction"
-                text="New Context"
-                description="Archive current context and start a new one"
+                class="ai.documentationfirst.ddd.actions.NewVisionAction"
+                text="New Vision"
+                description="Archive current vision and start a new one"
             />
         </group>
     </actions>
