@@ -1,0 +1,32 @@
+{
+  "vision": "Build the reference IDE extension for Documentation-Driven Development: a lightweight, agent-agnostic JetBrains plugin that scaffolds and manages the `.ai_context/` folder, turning project documentation into the primary interface between developers and AI agents.",
+  "steps": [
+    {
+      "name": "Phase 1 — Core structure",
+      "description": "Init action, tool window, basic templates, skills/, steps/",
+      "done": true
+    },
+    {
+      "name": "Phase 2 — dev-context.json & context panel",
+      "description": "Migrate to dev-context.json, show vision+steps+todos in tool window panel",
+      "done": false
+    },
+    {
+      "name": "Phase 3 — JetBrains Marketplace release",
+      "description": "Package, publish, README, changelog",
+      "done": false
+    }
+  ],
+  "task": {
+    "title": "Migrate to dev-context.json & align with VSCode plugin",
+    "description": "Apply same dev-context.json structure (vision + steps + task with todos) to TemplateProvider.kt, DddActions.kt and DddToolWindowFactory.kt",
+    "startedAt": "2026-05-16T00:00:00.000Z",
+    "todos": [
+      { "text": "Update TemplateProvider.kt: devContextJson(), scaffoldInit/NewVision/NewTask", "done": true },
+      { "text": "Update DddActions.kt: NewTaskAction reads steps from dev-context.json", "done": true },
+      { "text": "Update DddToolWindowFactory.kt: ContextPanel shows vision+steps+todos", "done": true },
+      { "text": "Build and test in IntelliJ sandbox", "done": false }
+    ]
+  }
+}
+

@@ -27,7 +27,7 @@ object TemplateProvider {
   // ── Static templates (permanent files) ────────────────────────────────────
 
   fun aiContextReadme(): String = """
-        # `.ai_context` — Documentation-Driven Development v2
+        # `.ai_context` — Documentation-Driven Development
 
         This folder is managed by the **Documentation First** plugin (JetBrains).
         It structures collaboration between the developer and the AI agent throughout the project.
@@ -47,25 +47,25 @@ object TemplateProvider {
 
         ---
 
-        ## How to work with this folder
+        ## Reading order (before any action)
 
-        ### 1. Read before acting
-        Before starting a work session, the agent **must read**:
-        - `CONTRACT.md` → the permanent rules of the project and the developer
-        - `CONTEXT.md` → the objective and tasks of the current context
-        - `documents/specification/` → functional and architectural details
-        - `documents/technical/` → technical decisions and best practices
+        1. `README.md` — this file
+        2. `CONTEXT.md` — current sprint/task focus
+        3. `CONTRACT.md` — interaction rules
+        4. `vision.md` — product vision and epic goals
+        5. `skills/` — permanent agent behaviours
+        6. `steps/` — roadmap phases and features
+        7. `tasks/specification/` — active specs
+        8. `tasks/done/` — what was already implemented
+        9. `tasks/technical/` — permanent technical references
 
-        ### 2. Work by adding contextual documents
-        - A new technical constraint → a file in `documents/technical/`
-        - A clarified functional need → a file in `documents/specification/`
-        - A completed task → a summary file in `documents/done/`
+        ---
 
-        ### `permanent-` Convention
-        A file in `technical/` or `specification/` prefixed with `permanent-` **will not be deleted**
-        when switching to a new context.
+        ## `permanent-` Convention
+        A file prefixed with `permanent-` **will not be deleted** when switching to a new context.
+        Applies to `tasks/specification/`, `tasks/technical/`, and `skills/`.
 
-        ### 3. Close a context before committing
+        ### Close a context before committing
         A **context = a unit of work = a Git commit**.
         Commit `.ai_context/` before moving to a new context.
 
@@ -77,11 +77,13 @@ object TemplateProvider {
         .ai_context/
         ├── README.md              ← this file (permanent)
         ├── CONTRACT.md            ← rules for the agent (permanent)
-        ├── CONTEXT.md             ← objective and todo list (contextual)
+        ├── CONTEXT.md             ← current context: objective and todo list (contextual)
         ├── context.json           ← machine metadata (contextual)
-        ├── history.log            ← past contexts journal (permanent)
-        ├── skills/                ← skills and competencies (permanent-* kept)
-        └── documents/
+        ├── vision.md              ← product vision and epic goals (permanent)
+        ├── history.json           ← past contexts journal in JSON Lines (permanent)
+        ├── skills/                ← permanent agent behaviours (permanent-* kept)
+        ├── steps/                 ← roadmap phases / features (permanent)
+        └── tasks/
             ├── done/              ← agent summaries (contextual)
             ├── specification/     ← functional specs (permanent-* kept)
             └── technical/         ← technical decisions (permanent-* kept)
@@ -203,6 +205,48 @@ object TemplateProvider {
         """.trimIndent()
   }
 
+  // ── Permanent templates ────────────────────────────────────────────────────
+
+  fun visionMd(vision: String): String = """
+        # Vision
+
+        *Created: ${today()}*
+
+        ---
+
+        ## Epic
+
+        $vision
+
+        ---
+
+        ## Goals
+
+        - [ ] ...
+
+        ## Out of scope
+
+        - ...
+    """.trimIndent()
+
+  fun stepMd(name: String, description: String): String = """
+        # Step — $name
+
+        *Created: ${today()}*
+
+        ---
+
+        ## Objective
+
+        ${if (description.isBlank()) "*(describe this step)*" else description}
+
+        ---
+
+        ## Tasks
+
+        - [ ] ...
+    """.trimIndent()
+
   // ── Contextual templates ───────────────────────────────────────────────────
 
   fun contextMd(title: String, description: String, todos: List<String>): String {
@@ -226,20 +270,154 @@ object TemplateProvider {
         """.trimIndent()
   }
 
-  fun contextJson(title: String, description: String): String {
+  fun devContextJson(
+    title: String,
+    description: String,
+    vision: String,
+    steps: List<Triple<String, String, Boolean>>,  // name, description, done
+    todos: List<String>
+  ): String {
+    val esc = { s: String -> s.replace("\\", "\\\\").replace("\"", "\\\"") }
+    val stepsJson = steps.joinToString(",\n    ") { (name, desc, done) ->
+      """{"name":"${esc(name)}","description":"${esc(desc)}","done":$done}"""
+    }
+    val todosJson = todos.joinToString(",\n      ") { t ->
+      """{"text":"${esc(t)}","done":false}"""
+    }
+    return """{
+  "vision": "${esc(vision)}",
+  "steps": [
+    $stepsJson
+  ],
+  "task": {
+    "title": "${esc(title)}",
+    "description": "${esc(description)}",
+    "startedAt": "${nowIso()}",
+    "todos": [
+      $todosJson
+    ]
+  }
+}"""
+  }
+
+  fun methodologySkillMd(): String = """
+        # Skill — DDD Methodology (permanent)
+
+        *Created: ${today()}*
+
+        > This file is permanent — it survives every context and vision switch.
+        > It defines how the agent must work on this project at all times.
+
+        ---
+
+        ## Reading order (before any action)
+
+        ### 🔒 Fixed reference — read once, always valid
+        1. `CONTEXT.md` — who we are, what we build, the stack, team conventions *(permanent)*
+        2. `CONTRACT.md` — agent interaction rules *(permanent)*
+
+        ### 🔄 Current development work — read every session
+        3. `vision.md` — product direction and epic goals
+        4. `steps/` — roadmap phases for the current vision
+        5. `dev-context.json` — active task: title, description, todos, step progress
+        6. `tasks/specification/` — functional specs for the current task
+        7. `tasks/done/` — what was already implemented
+        8. `tasks/technical/` — technical decisions
+
+        ---
+
+        ## Session protocol
+
+        ### 1. Read before acting
+        Read all context files above in order before taking any action.
+        > These files are the project's memory. Never assume the state of the code without reading them.
+
+        ### 2. Spec before code
+        For any new feature, fix, or refactoring:
+        1. Create `tasks/specification/spec-<feature>.md` with: context, expected behaviour, components, plan
+        2. Optionally generate `tasks/specification/spec-<feature>-preview.html` for UI tasks
+        3. Wait for explicit developer validation before writing any production code
+
+        ### 3. Implement
+        - Follow the validated spec to the letter
+        - Group changes by file
+        - Validate errors after each file modified
+
+        ### 4. Write the done report
+        After implementation, create `tasks/done/done-<feature>.md`:
+        - Summary of changes
+        - Per item: problem → root cause (if bug) → solution → modified files
+        - Optionally generate `tasks/done/done-<feature>-test.html` for acceptance verification
+
+        ---
+
+        ## Artefact conventions
+
+        | File | Location | Written by | Purpose |
+        |---|---|---|---|
+        | `spec-*.md` | `tasks/specification/` | Human | Intent |
+        | `spec-*-preview.html` | `tasks/specification/` | AI | Visual validation before coding |
+        | `done-*.md` | `tasks/done/` | AI | Execution report |
+        | `done-*-test.html` | `tasks/done/` | AI | Acceptance test runner |
+
+        Prefix any file with `permanent-` to preserve it across context resets.
+
+        ---
+
+        ## Communication rules
+
+        - If the request is ambiguous: ask ONE focused question, wait for the answer
+        - If the developer explains something: update mental context only — do not act unless explicitly asked
+        - If a bug is found in passing: signal it, do not fix without agreement (unless it blocks the current task)
+        - A developer explanation is not an action order
+    """.trimIndent()
+
+  fun contextProjectMd(projectContext: String): String = """
+        # Project Context
+
+        *Created: ${today()}*
+
+        ---
+
+        ## What we are building
+
+        $projectContext
+
+        ---
+
+        ## Stack & conventions
+
+        *(describe the stack, language, framework, key rules)*
+
+        ---
+
+        ## Team rules
+
+        *(describe how the agent should work: language, code style, what it must never do)*
+    """.trimIndent()
+
+  fun taskJson(title: String, description: String): String {
     val escaped = { s: String -> s.replace("\"", "\\\"") }
     return """{"title":"${escaped(title)}","description":"${escaped(description)}","startedAt":"${nowIso()}"}"""
   }
 
-  fun projectReadme(projectName: String): String = """
-        # For AI Agent :
+  private fun historyLine(type: String, title: String, completedStep: String = "", vision: String = ""): String {
+    val esc = { s: String -> s.replace("\"", "\\\"") }
+    val visionPart = if (vision.isNotBlank()) ""","vision":"${esc(vision)}"""" else ""
+    val stepPart = if (completedStep.isNotBlank()) ""","completedStep":"${esc(completedStep)}"""" else ""
+    return """{"type":"$type","title":"${esc(title)}"$visionPart$stepPart,"endedAt":"${nowIso()}"}"""
+  }
 
-        Read all [context](./.ai_context) for context and needs.
-        The agent must apply the conditions specified in CONTRACT.md.
-        The current development context is presented in CONTEXT.md and all files in the `documents/` directory.
-        The `done/` subdirectory contains MD files written by the agent explaining what was done in this context.
-        The `technical/` subdirectory contains best practices and technical guidelines.
-        The `specification/` subdirectory contains functional and architectural details.
+  fun projectReadmeMd(projectName: String): String = """
+        # For AI Agent
+
+        > Read `.ai_context/` before any action.
+
+        - **WHO/WHAT**: `CONTEXT.md` — project identity, stack, conventions *(permanent reference, like a README)*
+        - **HOW**: `CONTRACT.md` — interaction rules *(permanent)*
+        - **WHERE WE'RE GOING**: `vision.md` + `steps/` — product direction and roadmap phases
+        - **WHAT WE'RE DOING NOW**: `dev-context.json` — active task title, description, todos and step progress
+        - **TASK DETAILS**: `tasks/specification/`, `tasks/done/`, `tasks/technical/`
 
         ---
 
@@ -253,38 +431,50 @@ object TemplateProvider {
   fun scaffoldInit(
     aiContextRoot: File,
     profile: AgentProfile,
+    projectContext: String,
+    vision: String,
     title: String,
     description: String,
-    todos: List<String>
+    todos: List<String>,
+    steps: List<Pair<String, String>>
    ) {
      aiContextRoot.mkdirs()
      for (sub in listOf("done", "specification", "technical")) {
-       File(aiContextRoot, "documents/$sub").mkdirs()
-       File(aiContextRoot, "documents/$sub/.gitkeep").also {
-         if (!it.exists()) it.writeText("")
-       }
+       File(aiContextRoot, "tasks/$sub").mkdirs()
+       File(aiContextRoot, "tasks/$sub/.gitkeep").also { if (!it.exists()) it.writeText("") }
      }
      File(aiContextRoot, "skills").mkdirs()
-     File(aiContextRoot, "skills/.gitkeep").also {
-       if (!it.exists()) it.writeText("")
+     File(aiContextRoot, "skills/.gitkeep").also { if (!it.exists()) it.writeText("") }
+     // Default methodology skill (if not already present)
+     val methodologyFile = File(aiContextRoot, "skills/permanent-methodology.md")
+     if (!methodologyFile.exists()) { methodologyFile.writeText(methodologySkillMd()) }
+     File(aiContextRoot, "steps").mkdirs()
+     File(aiContextRoot, "steps/.gitkeep").also { if (!it.exists()) it.writeText("") }
+     for ((name, desc) in steps) {
+       val slug = name.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "")
+       File(aiContextRoot, "steps/$slug.md").writeText(stepMd(name, desc))
      }
      File(aiContextRoot, "README.md").also { if (!it.exists()) it.writeText(aiContextReadme()) }
-    File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
-    File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
-    File(aiContextRoot, "context.json").writeText(contextJson(title, description))
+     File(aiContextRoot, "CONTRACT.md").also { if (!it.exists()) it.writeText(contractMd(profile)) }
+     File(aiContextRoot, "CONTEXT.md").also { if (!it.exists()) it.writeText(contextProjectMd(projectContext)) }
+     File(aiContextRoot, "vision.md").also { if (!it.exists()) it.writeText(visionMd(vision)) }
 
-    // Create or update project README.md at root
+     val stepsTriple = steps.map { (name, desc) -> Triple(name, desc, false) }
+     File(aiContextRoot, "dev-context.json").writeText(devContextJson(title, description, vision, stepsTriple, todos))
+
     val projectRoot = aiContextRoot.parentFile
     val projectReadme = File(projectRoot, "README.md")
     if (!projectReadme.exists()) {
-      projectReadme.writeText(projectReadme(projectRoot.name))
+      projectReadme.writeText(projectReadmeMd(projectRoot.name))
     } else if (!projectReadme.readText().contains(".ai_context")) {
       val agentHeader = """
-                # For AI Agent :
+                # For AI Agent
 
-                Read all [context](./.ai_context) for context and needs.
-                The agent must apply the conditions specified in CONTRACT.md.
-                The current development context is presented in CONTEXT.md and all files in the `documents/` directory.
+                > Read `.ai_context/` before any action.
+
+                - **WHO/WHAT**: `CONTEXT.md` — project identity, stack, conventions *(permanent)*
+                - **WHERE WE'RE GOING**: `vision.md` + `steps/` — product direction and roadmap phases
+                - **WHAT WE'RE DOING NOW**: `dev-context.json` — active task, todos and step progress
 
                 ---
 
@@ -293,33 +483,78 @@ object TemplateProvider {
     }
   }
 
-  fun scaffoldNewContext(
+  fun scaffoldNewVision(
     aiContextRoot: File,
+    vision: String,
+    steps: List<Pair<String, String>>,
     title: String,
     description: String,
     todos: List<String>
   ) {
-    // Archive old context into history.log
-    val contextJsonFile = File(aiContextRoot, "context.json")
-    if (contextJsonFile.exists()) {
-      val oldJson = contextJsonFile.readText().trim().trimEnd('}')
-      val historyLine = """$oldJson,"endedAt":"${nowIso()}"}"""
-      File(aiContextRoot, "history.log").appendText(historyLine + "\n")
+    // Archive to history.json
+    val devContextFile = File(aiContextRoot, "dev-context.json")
+    if (devContextFile.exists()) {
+      val oldTitle = Regex(""""title"\s*:\s*"([^"]*?)"""").find(devContextFile.readText())?.groupValues?.get(1) ?: ""
+      File(aiContextRoot, "history.json").appendText(historyLine("vision", oldTitle) + "\n")
     }
 
-     // Clear done/ entirely
-     File(aiContextRoot, "documents/done").listFiles()?.forEach { it.delete() }
+    // Reset steps/ entirely
+    File(aiContextRoot, "steps").also { dir ->
+      dir.mkdirs()
+      dir.listFiles()?.filter { it.name != ".gitkeep" }?.forEach { it.delete() }
+    }
+    for ((name, desc) in steps) {
+      val slug = name.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "")
+      File(aiContextRoot, "steps/$slug.md").writeText(stepMd(name, desc))
+    }
 
-     // Clear specification/, technical/, and skills/ except permanent-*
-     for (sub in listOf("specification", "technical", "skills")) {
-       val dir = if (sub == "skills") File(aiContextRoot, sub) else File(aiContextRoot, "documents/$sub")
-       dir.listFiles()
-         ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
-         ?.forEach { it.delete() }
-     }
+    // Reset tasks/ non-permanent
+    clearTasks(aiContextRoot)
 
-    // Write new contextual files
-    File(aiContextRoot, "CONTEXT.md").writeText(contextMd(title, description, todos))
-    File(aiContextRoot, "context.json").writeText(contextJson(title, description))
+    // Overwrite vision.md and dev-context.json
+    File(aiContextRoot, "vision.md").writeText(visionMd(vision))
+    val stepsTriple = steps.map { (name, desc) -> Triple(name, desc, false) }
+    devContextFile.writeText(devContextJson(title, description, vision, stepsTriple, todos))
+  }
+
+  fun scaffoldNewTask(
+    aiContextRoot: File,
+    completedStep: String,
+    title: String,
+    description: String,
+    todos: List<String>
+  ) {
+    val devContextFile = File(aiContextRoot, "dev-context.json")
+    var currentVision = ""
+    var currentSteps = listOf<Triple<String, String, Boolean>>()
+
+    if (devContextFile.exists()) {
+      val text = devContextFile.readText()
+      // Extract vision
+      currentVision = Regex(""""vision"\s*:\s*"([^"]*?)"""").find(text)?.groupValues?.get(1) ?: ""
+      val oldTaskTitle = Regex(""""title"\s*:\s*"([^"]*?)"""").find(text)?.groupValues?.get(1) ?: ""
+      // Parse steps — mark completedStep as done
+      val stepRegex = Regex(""""name"\s*:\s*"([^"]*?)"[^}]*?"description"\s*:\s*"([^"]*?)"[^}]*?"done"\s*:\s*(true|false)""")
+      currentSteps = stepRegex.findAll(text).map { m ->
+        val name = m.groupValues[1]
+        val desc = m.groupValues[2]
+        val wasDone = m.groupValues[3] == "true"
+        Triple(name, desc, wasDone || (completedStep.isNotBlank() && name.lowercase().contains(completedStep.lowercase())))
+      }.toList()
+      File(aiContextRoot, "history.json").appendText(
+        historyLine("task", oldTaskTitle, completedStep, currentVision) + "\n"
+      )
+    }
+
+    clearTasks(aiContextRoot)
+    devContextFile.writeText(devContextJson(title, description, currentVision, currentSteps, todos))
+  }
+
+  private fun clearTasks(aiContextRoot: File) {
+    for (sub in listOf("done", "specification", "technical")) {
+      File(aiContextRoot, "tasks/$sub").listFiles()
+        ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
+        ?.forEach { it.delete() }
+    }
   }
 }

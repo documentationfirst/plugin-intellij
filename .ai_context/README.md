@@ -1,4 +1,4 @@
-# `.ai_context` — Documentation-Driven Development v2
+# `.ai_context` — Documentation-Driven Development
 
 Ce dossier est géré par le plugin **Documentation First** (JetBrains).
 Il structure la collaboration entre le développeur et l'agent IA tout au long du projet.
@@ -18,78 +18,54 @@ Le développeur et l'agent IA collaborent par **lecture et écriture de document
 
 ---
 
-## Comment travailler avec ce dossier
+## Ordre de lecture (avant toute action)
 
-### 1. Lire avant d'agir
-Avant de démarrer une session de travail, l'agent **doit lire** :
-- `CONTRACT.md` → les règles permanentes du projet et du développeur
-- `CONTEXT.md` → l'objectif et les tâches du contexte en cours
-- `documents/specification/` → les détails fonctionnels et architecturaux
-- `documents/technical/` → les décisions techniques et bonnes pratiques
-
-### 2. Travailler par ajout de documents contextuels
-Chaque nouveau besoin, décision ou découverte doit se traduire par **l'ajout ou la mise à jour d'un fichier** dans `documents/`.
-- Une nouvelle contrainte technique → un fichier dans `technical/`
-- Un besoin fonctionnel précisé → un fichier dans `specification/`
-- Une tâche terminée → un fichier de synthèse dans `done/`
-
-Le développeur peut créer ces fichiers lui-même, les co-écrire avec l'agent, ou demander à l'agent de les produire.
-
-### Convention `permanent-`
-Un fichier dans `technical/` ou `specification/` préfixé par `permanent-` **ne sera pas vidé** lors du passage à un nouveau contexte.
-
-Exemples :
-- `permanent-architecture-overview.md` → présentation globale du projet, valable sur toute sa durée
-- `permanent-coding-conventions.md` → règles de code spécifiques au projet
-- `permanent-stack-decisions.md` → choix technologiques structurants
-
-> Dans la fenêtre du plugin, ces fichiers sont affichés avec une mise en forme distincte (gras ou couleur).
-> Le préfixe `permanent-` est masqué dans l'affichage pour plus de lisibilité.
-
-⚠️ Cette convention ne s'applique **pas** à `done/` — une synthèse de tâche appartient toujours à son contexte.
-
-### 3. Clore un contexte avant de commiter
-Un **contexte = une unité de travail = un commit Git**.
-Avant de passer à un nouveau contexte, le développeur doit commiter `.ai_context/`
-pour conserver l'historique documentaire dans Git.
+1. `README.md` — ce fichier
+2. `CONTEXT.md` — focus sprint/tâche en cours
+3. `CONTRACT.md` — règles d'interaction
+4. `vision.md` — vision produit et objectifs épiques
+5. `skills/` — comportements permanents de l'agent
+6. `steps/` — jalons et features du roadmap
+7. `tasks/specification/` — specs actives du contexte courant
+8. `tasks/done/` — ce qui a déjà été implémenté
+9. `tasks/technical/` — références techniques permanentes
 
 ---
+
+## Convention `permanent-`
+
+Un fichier préfixé `permanent-` **ne sera pas supprimé** lors du passage à un nouveau contexte.
+S'applique à `tasks/specification/`, `tasks/technical/`, et `skills/`.
 
 ## Structure du dossier
 
 ```
 .ai_context/
 ├── README.md              ← ce fichier (permanent)
-├── CONTRACT.md            ← règles permanentes pour l'agent (permanent)
-├── CONTEXT.md             ← objectif et todo liste du contexte actuel (réinitialisé à chaque contexte)
-├── context.json           ← métadonnées machine du contexte actuel (réinitialisé à chaque contexte)
-├── history.log            ← journal de tous les contextes passés en JSON Lines (permanent)
-└── documents/
-    ├── done/              ← synthèses rédigées par l'agent (vidé à chaque contexte, jamais permanent)
-    ├── specification/     ← besoins fonctionnels et architecture (vidé à chaque contexte)
-    │   └── permanent-*.md ← fichiers préfixés : conservés entre les contextes
-    └── technical/         ← décisions techniques et bonnes pratiques (vidé à chaque contexte)
-        └── permanent-*.md ← fichiers préfixés : conservés entre les contextes
+├── CONTRACT.md            ← règles pour l'agent (permanent)
+├── CONTEXT.md             ← contexte actuel : objectif et todo list (contextuel)
+├── context.json           ← métadonnées machine (contextuel)
+├── vision.md              ← vision produit et objectifs épiques (permanent)
+├── history.json           ← journal des contextes passés en JSON Lines (permanent)
+├── skills/                ← comportements permanents de l'agent (permanent-* conservés)
+├── steps/                 ← jalons / features du roadmap (permanent)
+└── tasks/
+    ├── done/              ← comptes-rendus de l'agent (contextuel)
+    ├── specification/     ← specs fonctionnelles (permanent-* conservés)
+    └── technical/         ← décisions techniques (permanent-* conservés)
 ```
 
 ---
 
-## Fichiers permanents vs contextuels
+## Deux niveaux de contexte
 
-| Fichier / Dossier | Type | Rôle |
-|---|---|---|
-| `README.md` | Permanent | Ce guide |
-| `CONTRACT.md` | Permanent | Règles de l'agent |
-| `history.log` | Permanent (enrichi) | Journal des contextes |
-| `CONTEXT.md` | Contextuel | Objectif en cours |
-| `context.json` | Contextuel | Métadonnées machine |
-| `documents/done/` | Contextuel | Synthèses de l'agent |
-| `documents/specification/*.md` | Contextuel | Specs du contexte en cours |
-| `documents/specification/permanent-*.md` | **Permanent** | Présentation projet, architecture globale |
-| `documents/technical/*.md` | Contextuel | Décisions techniques du contexte |
-| `documents/technical/permanent-*.md` | **Permanent** | Conventions et best-practices projet |
+| Niveau | Emplacement | Nature | Reset ? |
+|--------|-------------|--------|---------|
+| **Contexte général** | `CONTEXT.md` + `vision.md` + `CONTRACT.md` + `steps/` + `skills/` | Permanent | ❌ Jamais |
+| **Contexte de développement** | `tasks/` (sous-dossiers uniquement) | Lié à un sprint | ✅ Possible |
+
+> `tasks/` ne contient **jamais** de fichiers directement à sa racine — uniquement des sous-dossiers.
 
 ---
 
 *Géré par [Documentation First Plugin](https://documentationfirst.ai) — MIT License*
-

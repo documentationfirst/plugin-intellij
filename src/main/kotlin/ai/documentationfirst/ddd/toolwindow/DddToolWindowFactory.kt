@@ -2,6 +2,8 @@ package ai.documentationfirst.ddd.toolwindow
 
 import ai.documentationfirst.ddd.actions.NewDocumentAction
 import ai.documentationfirst.ddd.actions.NewSkillAction
+import ai.documentationfirst.ddd.actions.NewTaskAction
+import ai.documentationfirst.ddd.actions.NewVisionAction
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -105,10 +107,14 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
             val buttonsPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
                 isOpaque = false
-                add(makeToolbarButton("+ New context") {
+                add(makeToolbarButton("+ New Vision") {
                     ActionManager.getInstance().tryToExecute(
-                        ActionManager.getInstance().getAction("ddd.newContext"),
-                        null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
+                        NewVisionAction(), null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
+                    )
+                })
+                add(makeToolbarButton("↺ New Tasks") {
+                    ActionManager.getInstance().tryToExecute(
+                        NewTaskAction(), null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
                     )
                 })
             }
@@ -159,31 +165,35 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                     val file = node.userObject as? File ?: return
                     if (file.isDirectory) {
                         val isSkills = file.name == "skills"
+                        val isTasks  = file.name == "tasks"
                         val menu = JPopupMenu()
-                        if (isSkills) {
-                            menu.add(JMenuItem("New skill .md").apply {
+                        when {
+                            isSkills -> menu.add(JMenuItem("New skill .md").apply {
                                 icon = AllIcons.Nodes.Editorconfig
                                 addActionListener {
                                     NewSkillAction(file, project).let { action ->
-                                        ActionManager.getInstance().tryToExecute(
-                                            action, null, null, ActionPlaces.POPUP, true
-                                        )
+                                        ActionManager.getInstance().tryToExecute(action, null, null, ActionPlaces.POPUP, true)
                                     }
                                 }
                             })
-                        } else {
-                            menu.add(JMenuItem("New file .md").apply {
+                            isTasks -> menu.add(JMenuItem("↺ New Tasks (refresh)").apply {
+                                icon = AllIcons.Actions.Execute
+                                addActionListener {
+                                    ActionManager.getInstance().tryToExecute(
+                                        NewTaskAction(), null, null, ActionPlaces.POPUP, true
+                                    )
+                                }
+                            })
+                            else -> menu.add(JMenuItem("New file .md").apply {
                                 icon = AllIcons.FileTypes.Text
                                 addActionListener {
                                     NewDocumentAction(file, project).let { action ->
-                                        ActionManager.getInstance().tryToExecute(
-                                            action, null, null, ActionPlaces.POPUP, true
-                                        )
+                                        ActionManager.getInstance().tryToExecute(action, null, null, ActionPlaces.POPUP, true)
                                     }
                                 }
                             })
                         }
-                        menu.show(this@apply, e.x, e.y)
+                        if (menu.componentCount > 0) menu.show(this@apply, e.x, e.y)
                     }
                 }
             })
@@ -195,20 +205,14 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
         val aiContextRoot = project.basePath?.let { File(it, ".ai_context") }
         if (aiContextRoot == null || !aiContextRoot.exists()) return root
 
-        // Add documents/ subdirectory
-        val documentsDir = File(aiContextRoot, "documents")
-        if (documentsDir.exists()) {
-            val documentsNode = DefaultMutableTreeNode(documentsDir)
-            root.add(documentsNode)
-            addChildren(documentsNode, documentsDir)
-        }
-
-        // Add skills/ subdirectory
-        val skillsDir = File(aiContextRoot, "skills")
-        if (skillsDir.exists()) {
-            val skillsNode = DefaultMutableTreeNode(skillsDir)
-            root.add(skillsNode)
-            addChildren(skillsNode, skillsDir)
+        // Add tasks/, steps/, skills/ subdirectories
+        for (dirName in listOf("tasks", "steps", "skills")) {
+            val dir = File(aiContextRoot, dirName)
+            if (dir.exists()) {
+                val node = DefaultMutableTreeNode(dir)
+                root.add(node)
+                addChildren(node, dir)
+            }
         }
 
         return root
@@ -246,8 +250,6 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
 
 class ContextPanel(private val project: Project) : JPanel(BorderLayout()) {
 
-    private val todoRegex = Regex("""^- \[([ x])\] (.+)$""", RegexOption.MULTILINE)
-
     init {
         border = JBUI.Borders.empty(6)
         preferredSize = Dimension(0, 200)
@@ -255,35 +257,80 @@ class ContextPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     fun load(aiContextRoot: File) {
         removeAll()
-        val contextJson = File(aiContextRoot, "context.json")
-        val contextMd = File(aiContextRoot, "CONTEXT.md")
+        val devContextFile = File(aiContextRoot, "dev-context.json")
 
-        if (!contextJson.exists() || !contextMd.exists()) {
+        if (!devContextFile.exists()) {
             add(JLabel("  No context initialized.", AllIcons.General.Information, SwingConstants.LEFT), BorderLayout.CENTER)
             revalidate(); repaint()
             return
         }
 
-        val jsonText = contextJson.readText()
-        val title = jsonText.extractJsonString("title") ?: "—"
-        val startedAt = jsonText.extractJsonString("startedAt")?.take(10) ?: "—"
-        val mdText = contextMd.readText()
-        val description = mdText.substringAfter("## Description").substringBefore("---").trim()
-            .lines().firstOrNull { it.isNotBlank() } ?: ""
-        val todos = todoRegex.findAll(mdText).toList()
+        val text = devContextFile.readText()
+        val vision = Regex(""""vision"\s*:\s*"([^"]*?)"""").find(text)?.groupValues?.get(1) ?: ""
+        val taskTitle = Regex(""""title"\s*:\s*"([^"]*?)"""").find(
+            text.substringAfter("\"task\"")
+        )?.groupValues?.get(1) ?: "—"
+        val startedAt = Regex(""""startedAt"\s*:\s*"([^"T]*?)""").find(text)?.groupValues?.get(1) ?: "—"
+        val taskDesc = Regex(""""description"\s*:\s*"([^"]*?)"""").find(
+            text.substringAfter("\"task\"")
+        )?.groupValues?.get(1) ?: ""
+
+        // Parse steps
+        data class StepInfo(val name: String, val done: Boolean)
+        val stepRegex = Regex(""""name"\s*:\s*"([^"]*?)"[^}]*?"done"\s*:\s*(true|false)""")
+        val steps = stepRegex.findAll(text.substringBefore("\"task\"")).map { m ->
+            StepInfo(m.groupValues[1], m.groupValues[2] == "true")
+        }.toList()
+
+        // Parse todos
+        data class TodoInfo(val text: String, val done: Boolean)
+        val todoRegex = Regex(""""text"\s*:\s*"([^"]*?)"[^}]*?"done"\s*:\s*(true|false)""")
+        val todos = todoRegex.findAll(text.substringAfter("\"todos\"")).map { m ->
+            TodoInfo(m.groupValues[1], m.groupValues[2] == "true")
+        }.toList()
 
         val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
         }
 
-        // Header
-        content.add(JLabel("<html><b>$title</b> <font color='gray'>— $startedAt</font></html>").apply {
+        // Vision
+        if (vision.isNotBlank()) {
+            content.add(JLabel("<html><font color='gray' style='font-size:9px'>VISION</font></html>").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            content.add(JLabel("<html><b>$vision</b></html>").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+                border = JBUI.Borders.emptyBottom(4)
+            })
+        }
+
+        // Steps
+        if (steps.isNotEmpty()) {
+            content.add(JLabel("<html><font color='gray' style='font-size:9px'>STEPS</font></html>").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            for (step in steps) {
+                val icon = if (step.done) "✅" else "○"
+                content.add(JLabel("<html>$icon ${step.name}</html>").apply {
+                    alignmentX = Component.LEFT_ALIGNMENT
+                    if (step.done) foreground = UIManager.getColor("Label.disabledForeground")
+                    border = JBUI.Borders.emptyBottom(1)
+                })
+            }
+            content.add(Box.createVerticalStrut(6))
+        }
+
+        // Task
+        content.add(JLabel("<html><font color='gray' style='font-size:9px'>TASK — $startedAt</font></html>").apply {
             alignmentX = Component.LEFT_ALIGNMENT
-            border = JBUI.Borders.emptyBottom(4)
         })
-        if (description.isNotBlank()) {
-            content.add(JLabel("<html><i>$description</i></html>").apply {
+        content.add(JLabel("<html><b>$taskTitle</b></html>").apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            border = JBUI.Borders.emptyBottom(2)
+        })
+        if (taskDesc.isNotBlank()) {
+            content.add(JLabel("<html><i>$taskDesc</i></html>").apply {
                 alignmentX = Component.LEFT_ALIGNMENT
                 foreground = UIManager.getColor("Label.disabledForeground")
                 border = JBUI.Borders.emptyBottom(6)
@@ -297,15 +344,13 @@ class ContextPanel(private val project: Project) : JPanel(BorderLayout()) {
                 font = font.deriveFont(Font.BOLD)
                 border = JBUI.Borders.emptyBottom(2)
             })
-            for (match in todos) {
-                val checked = match.groupValues[1] == "x"
-                val taskText = match.groupValues[2]
-                val cb = JCheckBox(taskText, checked).apply {
+            for (todo in todos) {
+                val cb = JCheckBox(todo.text, todo.done).apply {
                     isOpaque = false
                     alignmentX = Component.LEFT_ALIGNMENT
-                    if (checked) foreground = UIManager.getColor("Label.disabledForeground")
+                    if (todo.done) foreground = UIManager.getColor("Label.disabledForeground")
                     addActionListener {
-                        toggleTodo(File(aiContextRoot, "CONTEXT.md"), taskText, isSelected)
+                        toggleTodo(devContextFile, todo.text, isSelected)
                     }
                 }
                 content.add(cb)
@@ -317,18 +362,14 @@ class ContextPanel(private val project: Project) : JPanel(BorderLayout()) {
         repaint()
     }
 
-    private fun toggleTodo(contextMdFile: File, taskText: String, done: Boolean) {
-        if (!contextMdFile.exists()) return
-        val from = if (done) "- [ ] $taskText" else "- [x] $taskText"
-        val to   = if (done) "- [x] $taskText" else "- [ ] $taskText"
-        val updated = contextMdFile.readText().replace(from, to)
-        contextMdFile.writeText(updated)
-        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(contextMdFile)?.refresh(false, false)
-    }
-
-    private fun String.extractJsonString(key: String): String? {
-        val regex = Regex(""""$key"\s*:\s*"([^"]*?)"""")
-        return regex.find(this)?.groupValues?.get(1)
+    private fun toggleTodo(devContextFile: File, taskText: String, done: Boolean) {
+        if (!devContextFile.exists()) return
+        val text = devContextFile.readText()
+        val escaped = taskText.replace("\"", "\\\"")
+        val from = if (done) """"text":"$escaped","done":false""" else """"text":"$escaped","done":true"""
+        val to   = if (done) """"text":"$escaped","done":true"""  else """"text":"$escaped","done":false"""
+        devContextFile.writeText(text.replace(from, to))
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(devContextFile)?.refresh(false, false)
     }
 }
 
@@ -354,6 +395,8 @@ class DddTreeCellRenderer : DefaultTreeCellRenderer() {
 
         icon = when {
             file.isDirectory && file.name == "skills" -> AllIcons.Nodes.Editorconfig
+            file.isDirectory && file.name == "steps"  -> AllIcons.Nodes.ModelClass
+            file.isDirectory && file.name == "tasks"  -> AllIcons.Actions.Execute
             file.isDirectory -> AllIcons.Nodes.Folder
             file.extension == "md" -> AllIcons.FileTypes.Text
             else -> AllIcons.FileTypes.Unknown

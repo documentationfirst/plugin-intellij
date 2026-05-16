@@ -8,8 +8,11 @@
 ├── CONTRACT.md            ← profil du développeur, règles permanentes pour l'agent
 ├── CONTEXT.md             ← contexte actuel : titre, description, todo liste
 ├── context.json           ← données machine du contexte actuel (titre, description, date de début)
-├── history.log            ← journal de tous les contextes passés (format JSON Lines)
-└── documents/             ← l'historique complet est dans Git, pas dans des archives locales
+├── vision.md              ← vision produit et objectifs épiques (permanent)
+├── history.json           ← journal de tous les contextes passés (format JSON Lines, permanent)
+├── skills/                ← comportements permanents de l'agent (permanent-* conservés)
+├── steps/                 ← jalons / features du roadmap (permanent)
+└── tasks/                 ← l'historique complet est dans Git, pas dans des archives locales
     ├── done/              ← fichiers MD rédigés par l'agent résumant ce qui a été fait
     ├── specification/     ← détails fonctionnels, architecture, besoins
     └── technical/         ← bonnes pratiques et conseils techniques
@@ -50,10 +53,10 @@ Données machine du contexte actuel :
   "startedAt": "2026-04-20T10:00:00Z"
 }
 ```
-Utilisé pour alimenter `history.log` lors de la clôture du contexte (avec ajout de `endedAt`).
+Utilisé pour alimenter `history.json` lors de la clôture du contexte (avec ajout de `endedAt`).
 **Réinitialisé** lors du passage à un nouveau contexte.
 
-### `history.log`
+### `history.json`
 Journal de tous les contextes passés au format **JSON Lines** (une entrée par ligne) :
 ```jsonl
 {"title":"Mon premier contexte","description":"...","startedAt":"2026-04-01T09:00:00Z","endedAt":"2026-04-20T10:00:00Z"}
@@ -61,46 +64,30 @@ Journal de tous les contextes passés au format **JSON Lines** (une entrée par 
 ```
 Une nouvelle ligne est **ajoutée** (jamais remplacée) à chaque clôture de contexte.
 
+### `vision.md`
+Vision produit et objectifs épiques du projet. Créé à l'initialisation, **jamais réinitialisé**.
+
+### `steps/`
+Jalons et features du roadmap. Fichiers permanents représentant les phases de développement.
+**Jamais réinitialisé** lors du passage à un nouveau contexte.
+
 ---
 
-## Sous-répertoires `documents/`
+## Sous-répertoires `tasks/`
 
 ### Rôle
 Ces trois répertoires contiennent les documents de travail du contexte courant.
 Ils sont **vidés** lors du passage à un nouveau contexte (après archivage).
+`tasks/` ne contient **jamais** de fichiers directement à sa racine — uniquement des sous-dossiers.
 
-### `done/`
-Fichiers rédigés par l'agent à la fin d'une tâche ou d'une session, résumant :
-- Ce qui a été implémenté
-- Les choix techniques effectués
-- Les points d'attention pour la suite
+### `tasks/done/`
+Fichiers rédigés par l'agent à la fin d'une tâche ou d'une session. **Toujours contextuels**.
 
-> Le développeur doit **demander à l'agent** de rédiger ces fichiers en fin de session.
+### `tasks/specification/`
+Documents fonctionnels et d'architecture. Fichiers préfixés `permanent-` **conservés entre les contextes**.
 
-### `specification/`
-Documents fonctionnels et d'architecture rédigés par le développeur, seul ou **en co-écriture avec l'agent** :
-- Besoins détaillés
-- Diagrammes ou descriptions d'architecture
-- User stories, cas d'usage
-
-Fichiers préfixés `permanent-` dans ce dossier (ex: `permanent-project-overview.md`) sont **conservés entre les contextes** et servent à présenter le projet dans sa globalité : vision produit, architecture générale, contraintes structurantes.
-
-> Le développeur est encouragé à soumettre un brouillon à l'agent pour qu'il l'affine et le complète.
-
-### `technical/`
-Bonnes pratiques, décisions techniques et conseils rédigés par le développeur ou l'agent :
-- ADR (Architecture Decision Records)
-- Conventions de code spécifiques au contexte
-- Notes sur les bibliothèques ou patterns utilisés
-
-Fichiers préfixés `permanent-` dans ce dossier (ex: `permanent-coding-conventions.md`) sont **conservés entre les contextes** et représentent les règles et best-practices valables sur toute la durée du projet.
-
-> Ces fichiers peuvent être initiés par l'agent sur demande ("documente cette décision technique").
-
-### `done/`
-Fichiers rédigés par l'agent à la fin d'une tâche ou d'une session. **Toujours contextuels**, jamais permanents : une synthèse de tâche appartient à son contexte.
-
-> Le développeur doit **demander à l'agent** de rédiger ces fichiers en fin de session.
+### `tasks/technical/`
+Bonnes pratiques et décisions techniques. Fichiers préfixés `permanent-` **conservés entre les contextes**.
 
 ---
 
@@ -108,69 +95,56 @@ Fichiers rédigés par l'agent à la fin d'une tâche ou d'une session. **Toujou
 
 ### Philosophie : Git comme archive
 Il n'y a **pas d'archivage zip**. L'historique des contextes est délégué à **Git**.
-Chaque contexte important doit faire l'objet d'un commit avant d'être remplacé.
-Ainsi, chaque commit significatif du projet embarque naturellement son contexte AI.
 
 > 💡 Un contexte = une unité de commit. C'est la philosophie "Documentation First" appliquée au versionnement.
 
 ### Avertissement obligatoire
-Avant toute réinitialisation, le plugin **doit afficher une popup de confirmation** indiquant :
+Avant toute réinitialisation, le plugin **doit afficher une popup de confirmation** :
 
-> ⚠️ **Êtes-vous sûr de vouloir démarrer un nouveau contexte ?**
->
-> Les fichiers `CONTEXT.md`, `context.json` et le contenu de `documents/` vont être effacés.
-> **Assurez-vous d'avoir commité ces fichiers** si vous souhaitez conserver ce contexte dans Git.
->
-> `[Annuler]` `[Continuer quand même]`
+> ⚠️ Les fichiers `CONTEXT.md`, `context.json` et le contenu de `tasks/` vont être effacés.
+> `vision.md` et `steps/` sont **conservés**.
+> **Commitez d'abord** si vous souhaitez conserver ce contexte dans Git.
 
 ### Fichiers conservés lors du changement de contexte
-- `CONTRACT.md` → **conservé intact**
-- `README.md` → **conservé intact**
-- `history.log` → **conservé et enrichi**
+- `CONTRACT.md`, `README.md`, `vision.md`, `steps/`, `skills/` → **conservés intacts**
+- `history.json` → **conservé et enrichi**
 
 ### Fichiers réinitialisés
-- `CONTEXT.md` → réécrit avec le nouveau contexte
-- `context.json` → réécrit avec les nouvelles métadonnées
-- `documents/done/` → **vidé intégralement**
-- `documents/specification/*.md` → **vidé**, sauf les fichiers `permanent-*`
-- `documents/technical/*.md` → **vidé**, sauf les fichiers `permanent-*`
+- `CONTEXT.md`, `context.json` → réécrits
+- `tasks/done/` → **vidé intégralement**
+- `tasks/specification/*.md` → **vidé**, sauf `permanent-*`
+- `tasks/technical/*.md` → **vidé**, sauf `permanent-*`
 
 ### Séquence lors du passage à un nouveau contexte
-1. Afficher la popup d'avertissement Git (voir ci-dessus)
-2. Si l'utilisateur annule → arrêter
-3. Lire `context.json` pour récupérer les métadonnées de l'ancien contexte
-4. Ajouter une ligne à `history.log` avec `endedAt` = maintenant
-5. Vider `documents/done/` entièrement, et vider `documents/specification/` et `documents/technical/` **en conservant les fichiers `permanent-*`**
-6. Demander à l'utilisateur : titre, description, todo liste du nouveau contexte
-7. Réécrire `CONTEXT.md` et `context.json` avec les nouvelles données
-8. Rafraîchir l'arborescence dans la fenêtre du plugin
+1. Popup d'avertissement Git
+2. Si annulation → arrêter
+3. Lire `context.json`, ajouter une ligne à `history.json` avec `endedAt`
+4. Vider `tasks/done/` et les non-`permanent-*` de `tasks/specification/` et `tasks/technical/`
+5. Demander : titre, description, todo liste
+6. Réécrire `CONTEXT.md` et `context.json`
+7. Rafraîchir l'arborescence
 
 ---
 
 ## Fenêtre du plugin
 
 ### Barre d'actions (haut)
-- **"Initialiser le contexte"** : affiché uniquement si `.ai_context/` n'existe pas encore
-- **"Nouveau contexte"** : affiché si le contexte est déjà initialisé
+- **"Initialize a context"** : si `.ai_context/` n'existe pas encore
+- **"+ New context"** : si le contexte est déjà initialisé
 
 ### Arborescence (milieu)
-Affiche le contenu de `.ai_context/documents/` avec les trois sous-répertoires.
-Un **clic droit** sur un sous-répertoire permet de créer un nouveau fichier `.md`.
+Affiche `tasks/`, `steps/`, `skills/` avec icônes distinctes.
+Clic droit sur un sous-dossier → créer un nouveau fichier `.md`.
 
-**Règles de rendu visuel des fichiers :**
+**Règles de rendu visuel :**
 
 | Fichier | Affichage | Couleur |
 |---|---|---|
-| `specification/*.md` | Nom du fichier | Normale |
-| `specification/permanent-*.md` | Nom **sans** le préfixe `permanent-`, en **gras** | Accentuée (ex: bleu) |
-| `technical/*.md` | Nom du fichier | Normale |
-| `technical/permanent-*.md` | Nom **sans** le préfixe `permanent-`, en **gras** | Accentuée (ex: bleu) |
-| `done/*.md` | Nom du fichier | Neutre/atténuée (ex: gris) — signifie "archivé, lu seulement" |
+| `permanent-*.md` | Nom sans préfixe, en **gras** | Violet |
+| `tasks/done/*.md` | Nom du fichier | Gris atténué |
+| Autres `.md` | Nom du fichier | Normale |
 
 ### Panneau de contexte (bas)
-Affiche en lecture/interaction :
-- Date de début du contexte (`startedAt` de `context.json`)
-- Titre
-- Description
+- Date de début, titre, description
 - Todo liste avec **cases à cocher cliquables** — chaque clic met à jour `CONTEXT.md`
 

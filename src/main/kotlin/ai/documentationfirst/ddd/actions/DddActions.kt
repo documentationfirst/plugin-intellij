@@ -9,11 +9,17 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBTextField
 import java.io.File
+import javax.swing.BoxLayout
+import javax.swing.JLabel
+import javax.swing.JPanel
 import javax.swing.JScrollPane
 
 // ── Initialize Context ────────────────────────────────────────────────────────
@@ -31,25 +37,72 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
         val options = profiles.map { "${it.label} — ${it.description}" }.toTypedArray()
         val list = JBList(options.toList()).apply { selectedIndex = 0 }
         val profileDialog = DialogBuilder(project).apply {
-            setTitle("Documentation First — Profil agent")
+            setTitle("Documentation First — Agent profile (1/5)")
             setCenterPanel(JScrollPane(list))
-            addOkAction()
-            addCancelAction()
+            addOkAction(); addCancelAction()
         }
         if (!profileDialog.showAndGet()) return
         val profile = profiles[list.selectedIndex.coerceAtLeast(0)]
 
-        // Step 2: ask context info
-        val input = askContextInput(project, "Initialiser le contexte") ?: return
+        // Step 2: project context (permanent)
+        val contextField = JBTextField(50).apply { emptyText.text = "e.g. VSCode plugin in TypeScript for DDD scaffolding" }
+        val contextPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JLabel("Project context — permanent (what we build, stack, conventions):"))
+            add(contextField)
+        }
+        val contextDialog = DialogBuilder(project).apply {
+            setTitle("Init (2/5) — Project Context (permanent)")
+            setCenterPanel(contextPanel); addOkAction(); addCancelAction()
+        }
+        if (!contextDialog.showAndGet()) return
+        val projectContext = contextField.text.trim().ifBlank { "*(no context)*" }
 
-        // Step 3: scaffold
-        TemplateProvider.scaffoldInit(aiContextRoot, profile, input.title, input.description, input.todos)
+        // Step 3: vision (semi-permanent)
+        val visionField = JBTextField(50).apply { emptyText.text = "e.g. Ship a zero-friction DDD plugin for all major IDEs" }
+        val visionPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JLabel("Product vision — semi-permanent (epic goals):"))
+            add(visionField)
+        }
+        val visionDialog = DialogBuilder(project).apply {
+            setTitle("Init (3/5) — Vision (semi-permanent)")
+            setCenterPanel(visionPanel); addOkAction(); addCancelAction()
+        }
+        if (!visionDialog.showAndGet()) return
+        val vision = visionField.text.trim().ifBlank { "*(no vision)*" }
+
+        // Step 4: steps (loop)
+        val steps = mutableListOf<Pair<String, String>>()
+        while (true) {
+            val nameField = JBTextField(40)
+            val descField = JBTextField(40)
+            val stepPanel = JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                add(JLabel("Step ${steps.size + 1} name (leave empty to finish):"))
+                add(nameField)
+                add(JLabel("Description (optional):"))
+                add(descField)
+            }
+            val stepDialog = DialogBuilder(project).apply {
+                setTitle("Init (4/5) — Add step / phase")
+                setCenterPanel(stepPanel); addOkAction(); addCancelAction()
+            }
+            if (!stepDialog.showAndGet()) break
+            val name = nameField.text.trim()
+            if (name.isBlank()) break
+            steps.add(name to descField.text.trim())
+        }
+
+        // Step 5: first task
+        val input = askContextInput(project, "Init (5/5) — First Task") ?: return
+
+        TemplateProvider.scaffoldInit(aiContextRoot, profile, projectContext, vision, input.title, input.description, input.todos, steps)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
         DddToolWindowFactory.refresh(project)
 
         DddNotifications.showInfo(
-            project,
-            "Contexte initialisé ✅",
+            project, "DDD initialisé ✅",
             "Stack: <b>${DddDetector.check(project).stack.label}</b> — Profil: <b>${profile.name.lowercase()}</b>"
         )
     }
@@ -60,44 +113,131 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
     }
 }
 
-// ── New Context ───────────────────────────────────────────────────────────────
+// ── New Vision ────────────────────────────────────────────────────────────────
 
-class NewContextAction : AnAction(AllIcons.Actions.Refresh) {
+class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val aiContextRoot = requireAiContextRoot(project) ?: return
 
-        // Step 1: Git warning
         val confirm = Messages.showOkCancelDialog(
             project,
-            """
-            Les fichiers CONTEXT.md, context.json et le contenu de documents/ vont être effacés
-            (sauf les fichiers permanent-*).
-            
-            Assurez-vous d'avoir commité ces fichiers dans Git si vous souhaitez conserver ce contexte.
-            """.trimIndent(),
-            "⚠️ Nouveau contexte",
-            "Continuer quand même",
-            "Annuler",
+            "vision.md va être réécrite. steps/ va être réinitialisé. tasks/ (non-permanent) va être vidé.\n" +
+            "CONTEXT.md et skills/ sont conservés.\n\nAssurez-vous d'avoir commité d'abord.",
+            "⚠️ Nouvelle Vision",
+            "Continuer quand même", "Annuler",
             Messages.getWarningIcon()
         )
         if (confirm != Messages.OK) return
 
-        // Step 2: ask new context info
-        val input = askContextInput(project, "Nouveau contexte") ?: return
+        // New vision
+        val visionField = JBTextField(50).apply { emptyText.text = "e.g. Expand to all major IDE platforms" }
+        val visionPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JLabel("Nouvelle vision produit (semi-permanent):"))
+            add(visionField)
+        }
+        val visionDialog = DialogBuilder(project).apply {
+            setTitle("Nouvelle Vision (1/3)")
+            setCenterPanel(visionPanel); addOkAction(); addCancelAction()
+        }
+        if (!visionDialog.showAndGet()) return
+        val vision = visionField.text.trim().ifBlank { "*(no vision)*" }
 
-        // Step 3: switch context
-        TemplateProvider.scaffoldNewContext(aiContextRoot, input.title, input.description, input.todos)
+        // Steps (loop)
+        val steps = mutableListOf<Pair<String, String>>()
+        while (true) {
+            val nameField = JBTextField(40)
+            val descField = JBTextField(40)
+            val stepPanel = JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                add(JLabel("Step ${steps.size + 1} (laissez vide pour terminer):"))
+                add(nameField)
+                add(JLabel("Description:"))
+                add(descField)
+            }
+            val stepDialog = DialogBuilder(project).apply {
+                setTitle("Nouvelle Vision (2/3) — Steps")
+                setCenterPanel(stepPanel); addOkAction(); addCancelAction()
+            }
+            if (!stepDialog.showAndGet()) break
+            val name = nameField.text.trim()
+            if (name.isBlank()) break
+            steps.add(name to descField.text.trim())
+        }
+
+        // First task
+        val input = askContextInput(project, "Nouvelle Vision (3/3) — Première tâche") ?: return
+
+        TemplateProvider.scaffoldNewVision(aiContextRoot, vision, steps, input.title, input.description, input.todos)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
         DddToolWindowFactory.refresh(project)
 
-        DddNotifications.showInfo(
+        DddNotifications.showInfo(project, "Nouvelle vision démarrée ✅", "<b>$vision</b>")
+    }
+
+    override fun update(e: AnActionEvent) {
+        val root = e.project?.basePath ?: return
+        e.presentation.isEnabledAndVisible = File(root, ".ai_context").exists()
+    }
+}
+
+// ── New Task ──────────────────────────────────────────────────────────────────
+
+class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val aiContextRoot = requireAiContextRoot(project) ?: return
+
+        val confirm = Messages.showOkCancelDialog(
             project,
-            "Nouveau contexte démarré ✅",
-            "<b>${input.title}</b>"
+            "tasks/ (non-permanent) va être vidé.\nvision.md, steps/, CONTEXT.md et skills/ sont conservés.\n\nAssurez-vous d'avoir commité d'abord.",
+            "⚠️ Nouvelles Tasks",
+            "Continuer quand même", "Annuler",
+            Messages.getWarningIcon()
         )
+        if (confirm != Messages.OK) return
+
+        // Which step was completed? — read from dev-context.json for name consistency
+        val devContextFile = File(aiContextRoot, "dev-context.json")
+        data class StepItem(val name: String, val desc: String)
+        val pendingSteps = mutableListOf<StepItem>()
+        if (devContextFile.exists()) {
+          try {
+            val text = devContextFile.readText()
+            val stepRegex = Regex(""""name"\s*:\s*"([^"]*?)"[^}]*?"description"\s*:\s*"([^"]*?)"[^}]*?"done"\s*:\s*(true|false)""")
+            stepRegex.findAll(text).forEach { m ->
+              if (m.groupValues[3] == "false") pendingSteps.add(StepItem(m.groupValues[1], m.groupValues[2]))
+            }
+          } catch (_: Exception) {}
+        }
+
+        val noneLabel = "(aucun) — aucun step achevé"
+        val stepChoices = listOf(noneLabel) + pendingSteps.map { "${it.name}  —  ${it.desc}" }
+        val stepList = JBList(stepChoices).apply { selectedIndex = 0 }
+        val stepDialog = DialogBuilder(project).apply {
+          setTitle("Nouvelle Task (1/3) — Un step vient-il d'être achevé ?")
+          setCenterPanel(JScrollPane(stepList))
+          addOkAction(); addCancelAction()
+        }
+        if (!stepDialog.showAndGet()) return
+        val selectedLabel = stepList.selectedValue ?: noneLabel
+        val completedStep = if (selectedLabel == noneLabel) "" else pendingSteps.getOrNull(stepList.selectedIndex - 1)?.name ?: ""
+
+        // New task
+        val input = askContextInput(project, "Nouvelles Tasks (2/3)") ?: return
+
+        TemplateProvider.scaffoldNewTask(aiContextRoot, completedStep, input.title, input.description, input.todos)
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
+        DddToolWindowFactory.refresh(project)
+
+        val msg = if (completedStep.isNotBlank()) "Step achevé: <b>$completedStep</b> — Nouvelle tâche: <b>${input.title}</b>"
+                  else "Nouvelle tâche: <b>${input.title}</b>"
+        DddNotifications.showInfo(project, "Nouvelles tasks démarrées ✅", msg)
     }
 
     override fun update(e: AnActionEvent) {
