@@ -30,7 +30,7 @@ dependencies {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "documentationfirst - Documentation-Driven Development for agentic AI"
+        name = "Documentation First - DDD2"
         version = "1.0.0"
         description = """
             Make Documentation-Driven Development a first-class AI citizen of your IDE.
