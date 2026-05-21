@@ -27,6 +27,11 @@
       { "text": "Update DddToolWindowFactory.kt: ContextPanel shows vision+steps+todos", "done": true },
       { "text": "Build and test in IntelliJ sandbox", "done": false }
     ]
+  },
+  "lastSession": {
+    "date": "2026-05-21",
+    "done": "Full UX polish pass: Quick init, spec auto-creation, steps retrospective, selective spec deletion, CONTRACT session protocol, plugin.xml marketplace, tests and CHANGELOG — v1.0.1 ready to publish",
+    "remaining": "Publish 1.0.1 to JetBrains Marketplace",
+    "blocker": ""
   }
 }
-

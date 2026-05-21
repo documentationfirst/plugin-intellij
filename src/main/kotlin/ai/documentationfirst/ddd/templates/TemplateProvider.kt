@@ -198,6 +198,28 @@ object TemplateProvider {
 
             ---
 
+            ## 🔄 Session close protocol
+
+            At the end of a session, update `dev-context.json` → `lastSession` with:
+            ```json
+            "lastSession": {
+              "date": "YYYY-MM-DD",
+              "done": "one sentence — what was implemented",
+              "remaining": "what is left in the current task",
+              "blocker": "what blocked or is unclear (empty if none)"
+            }
+            ```
+
+            **Trigger this automatically when:**
+            1. The developer signals end of session ("stop", "commit", "done", "à demain", etc.)
+            2. More than 5 files were modified in this session
+            3. A significant feature or bug fix was just completed
+            4. A new major topic is about to begin — natural breakpoint before context switch
+
+            This is a lightweight handoff — not a full `done.md`. One sentence per field.
+
+            ---
+
             ## 📁 Reference documentation
 
             All context is centralized in [`.ai_context/`](./.ai_context/).
@@ -396,7 +418,38 @@ object TemplateProvider {
         *(describe how the agent should work: language, code style, what it must never do)*
     """.trimIndent()
 
-  fun taskJson(title: String, description: String): String {
+  fun newTaskSpecMd(title: String, description: String): String {
+    return """
+        # Spec — $title
+
+        *Created: ${today()}*
+
+        ---
+
+        ## Objective
+
+        ${if (description.isBlank()) "*(describe the objective of this task)*" else description}
+
+        ---
+
+        ## Expected behaviour
+
+        *(describe the expected behaviour)*
+
+        ---
+
+        ## Plan
+
+        *(describe the implementation plan)*
+
+        ---
+
+        > 💡 **Next step**: ask your AI agent to read `.ai_context/` and implement this spec.
+    """.trimIndent()
+  }
+
+  private fun newTaskSpecFilename(title: String): String =
+    "spec-" + title.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "") + ".md"
     val escaped = { s: String -> s.replace("\"", "\\\"") }
     return """{"title":"${escaped(title)}","description":"${escaped(description)}","startedAt":"${nowIso()}"}"""
   }
@@ -462,6 +515,9 @@ object TemplateProvider {
      val stepsTriple = steps.map { (name, desc) -> Triple(name, desc, false) }
      File(aiContextRoot, "dev-context.json").writeText(devContextJson(title, description, vision, stepsTriple, todos))
 
+     // Create spec file for the first task
+     File(aiContextRoot, "tasks/specification/${newTaskSpecFilename(title)}").writeText(newTaskSpecMd(title, description))
+
     val projectRoot = aiContextRoot.parentFile
     val projectReadme = File(projectRoot, "README.md")
     if (!projectReadme.exists()) {
@@ -515,6 +571,9 @@ object TemplateProvider {
     File(aiContextRoot, "vision.md").writeText(visionMd(vision))
     val stepsTriple = steps.map { (name, desc) -> Triple(name, desc, false) }
     devContextFile.writeText(devContextJson(title, description, vision, stepsTriple, todos))
+
+    // Create spec file for the first task of the new vision
+    File(aiContextRoot, "tasks/specification/${newTaskSpecFilename(title)}").writeText(newTaskSpecMd(title, description))
   }
 
   fun scaffoldNewTask(
@@ -522,7 +581,8 @@ object TemplateProvider {
     completedStep: String,
     title: String,
     description: String,
-    todos: List<String>
+    todos: List<String>,
+    specsToDelete: List<String> = emptyList()
   ) {
     val devContextFile = File(aiContextRoot, "dev-context.json")
     var currentVision = ""
@@ -546,15 +606,36 @@ object TemplateProvider {
       )
     }
 
-    clearTasks(aiContextRoot)
+    clearTasks(aiContextRoot, specsToDelete)
+
+    // Append retrospective section to the completed step file
+    if (completedStep.isNotBlank()) {
+      val slug = completedStep.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "")
+      val stepFile = File(aiContextRoot, "steps/$slug.md")
+      if (stepFile.exists()) {
+        stepFile.appendText("\n\n## Retrospective — ${today()}\n\n- ✅ What worked:\n- ⚠️ What blocked:\n- 📌 To remember:\n")
+      }
+    }
     devContextFile.writeText(devContextJson(title, description, currentVision, currentSteps, todos))
+
+    // Create spec file for the new task
+    File(aiContextRoot, "tasks/specification/${newTaskSpecFilename(title)}").writeText(newTaskSpecMd(title, description))
   }
 
-  private fun clearTasks(aiContextRoot: File) {
-    for (sub in listOf("done", "specification", "technical")) {
-      File(aiContextRoot, "tasks/$sub").listFiles()
-        ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
-        ?.forEach { it.delete() }
-    }
+  private fun clearTasks(aiContextRoot: File, specsToDelete: List<String> = emptyList()) {
+    // done/ — always cleared entirely
+    File(aiContextRoot, "tasks/done").listFiles()
+      ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
+      ?.forEach { it.delete() }
+
+    // specification/ — only delete explicitly selected files
+    File(aiContextRoot, "tasks/specification").listFiles()
+      ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" && specsToDelete.contains(it.name) }
+      ?.forEach { it.delete() }
+
+    // technical/ — clear non-permanent
+    File(aiContextRoot, "tasks/technical").listFiles()
+      ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
+      ?.forEach { it.delete() }
   }
 }

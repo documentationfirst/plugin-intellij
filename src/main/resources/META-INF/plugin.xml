@@ -1,23 +1,45 @@
 <idea-plugin>
     <id>ai.documentationfirst.ddd</id>
     <name>Documentation First</name>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <vendor url="https://documentationfirst.ai" email="contact@documentationfirst.ai">
         Documentation First
     </vendor>
     <description><![CDATA[
-        Make Documentation-Driven Development v2 a first-class AI citizen of your IDE.<br/><br/>
+        <b>Make your documentation a superpower contextual memory for your AI agent.</b><br/><br/>
+
+        <b>Documentation First — DDD v2 for agentic AI.</b>
+
+        Structures collaboration between developer and AI agent through a living <code>.ai_context/</code> folder.<br/>
+        Agent-agnostic: works with JetBrains AI, GitHub Copilot, Cursor, or any assistant.<br/><br/>
+
+        <b>How it works:</b><br/>
+        Write specs → AI reads context → AI implements → AI writes done report → commit → next task<br/><br/>
+
         <b>Features:</b><br/>
         <ul>
-            <li>Auto-detects <code>.ai_context/</code> on project open</li>
-            <li>Initialize and manage your AI context (title, description, todo list)</li>
-            <li>Documents tree: specification, technical, done — with permanent-* support</li>
-            <li>Clickable todo list synced with CONTEXT.md</li>
-            <li>Context history in history.log (JSON Lines)</li>
+            <li>Auto-detects <code>.ai_context/</code> on project open and prompts initialization</li>
+            <li>Initialize project: agent profile, vision, steps (roadmap), first task</li>
+            <li>New Task: select completed step, choose specs to delete, scaffold next task</li>
+            <li>New Vision: reset roadmap and tasks, preserve permanent context</li>
+            <li>DDD tool window: tree view of specification/, done/, technical/, steps/, skills/</li>
+            <li>Permanent files (<code>permanent-*</code>) survive all context resets</li>
+            <li>Task history in <code>history.json</code> (JSON Lines, append-only)</li>
         </ul>
         <br/>
         Learn more at <a href="https://documentationfirst.ai">documentationfirst.ai</a>
     ]]></description>
+
+    <change-notes><![CDATA[
+        <b>1.0.0</b><br/>
+        <ul>
+            <li>Initial release</li>
+            <li>Full DDD v2 lifecycle: init → vision → steps → tasks → done</li>
+            <li>Selective spec deletion on New Task</li>
+            <li>Spec file auto-created for each new task</li>
+            <li>Agent-agnostic: pure Markdown + Git, no external service</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 
@@ -50,13 +72,19 @@
                 id="ddd.initContext"
                 class="ai.documentationfirst.ddd.actions.InitContextAction"
                 text="Initialize Context"
-                description="Initialize .ai_context/ with templates and first context"
+                description="Initialize .ai_context/ with templates, vision, steps and first task"
             />
             <action
-                id="ddd.newContext"
+                id="ddd.newVision"
                 class="ai.documentationfirst.ddd.actions.NewVisionAction"
                 text="New Vision"
-                description="Archive current vision and start a new one"
+                description="Rewrite vision.md, reset steps/ and tasks/ (non-permanent)"
+            />
+            <action
+                id="ddd.newTask"
+                class="ai.documentationfirst.ddd.actions.NewTaskAction"
+                text="New Task"
+                description="Archive current task, select specs to delete, scaffold next task"
             />
         </group>
     </actions>

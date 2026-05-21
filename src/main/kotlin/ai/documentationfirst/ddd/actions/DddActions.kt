@@ -21,6 +21,7 @@ import javax.swing.BoxLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.ListSelectionModel
 
 // ── Initialize Context ────────────────────────────────────────────────────────
 
@@ -32,12 +33,23 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
         val root = project.basePath ?: return
         val aiContextRoot = File(root, ".ai_context")
 
+        // Step 0: Full or Quick init?
+        val modeChoices = listOf("⭐ Full init (recommended) — Profile, Context, Vision, Steps, First Task",
+                                 "⚡ Quick init — Profile + Context only (fill vision & steps later)")
+        val modeList = JBList(modeChoices).apply { selectedIndex = 0 }
+        val modeDialog = DialogBuilder(project).apply {
+            setTitle("Documentation First — Init mode")
+            setCenterPanel(JScrollPane(modeList)); addOkAction(); addCancelAction()
+        }
+        if (!modeDialog.showAndGet()) return
+        val isQuick = modeList.selectedIndex == 1
+
         // Step 1: choose agent profile
         val profiles = AgentProfile.entries.toTypedArray()
         val options = profiles.map { "${it.label} — ${it.description}" }.toTypedArray()
         val list = JBList(options.toList()).apply { selectedIndex = 0 }
         val profileDialog = DialogBuilder(project).apply {
-            setTitle("Documentation First — Agent profile (1/5)")
+            setTitle(if (isQuick) "Quick Init (1/3) — Agent profile" else "Full Init (1/5) — Agent profile")
             setCenterPanel(JScrollPane(list))
             addOkAction(); addCancelAction()
         }
@@ -52,50 +64,57 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
             add(contextField)
         }
         val contextDialog = DialogBuilder(project).apply {
-            setTitle("Init (2/5) — Project Context (permanent)")
+            setTitle(if (isQuick) "Quick Init (2/3) — Project Context" else "Full Init (2/5) — Project Context (permanent)")
             setCenterPanel(contextPanel); addOkAction(); addCancelAction()
         }
         if (!contextDialog.showAndGet()) return
         val projectContext = contextField.text.trim().ifBlank { "*(no context)*" }
 
-        // Step 3: vision (semi-permanent)
-        val visionField = JBTextField(50).apply { emptyText.text = "e.g. Ship a zero-friction DDD plugin for all major IDEs" }
-        val visionPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            add(JLabel("Product vision — semi-permanent (epic goals):"))
-            add(visionField)
-        }
-        val visionDialog = DialogBuilder(project).apply {
-            setTitle("Init (3/5) — Vision (semi-permanent)")
-            setCenterPanel(visionPanel); addOkAction(); addCancelAction()
-        }
-        if (!visionDialog.showAndGet()) return
-        val vision = visionField.text.trim().ifBlank { "*(no vision)*" }
-
-        // Step 4: steps (loop)
+        // Steps 3+4: vision & steps — skipped in Quick mode
+        var vision = "*(To be defined — fill vision.md before asking the agent to work)*"
         val steps = mutableListOf<Pair<String, String>>()
-        while (true) {
-            val nameField = JBTextField(40)
-            val descField = JBTextField(40)
-            val stepPanel = JPanel().apply {
+
+        if (!isQuick) {
+            // Step 3: vision
+            val visionField = JBTextField(50).apply { emptyText.text = "e.g. Ship a zero-friction DDD plugin for all major IDEs" }
+            val visionPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                add(JLabel("Step ${steps.size + 1} name (leave empty to finish):"))
-                add(nameField)
-                add(JLabel("Description (optional):"))
-                add(descField)
+                add(JLabel("Product vision — semi-permanent (epic goals):"))
+                add(visionField)
             }
-            val stepDialog = DialogBuilder(project).apply {
-                setTitle("Init (4/5) — Add step / phase")
-                setCenterPanel(stepPanel); addOkAction(); addCancelAction()
+            val visionDialog = DialogBuilder(project).apply {
+                setTitle("Full Init (3/5) — Vision (semi-permanent)")
+                setCenterPanel(visionPanel); addOkAction(); addCancelAction()
             }
-            if (!stepDialog.showAndGet()) break
-            val name = nameField.text.trim()
-            if (name.isBlank()) break
-            steps.add(name to descField.text.trim())
+            if (!visionDialog.showAndGet()) return
+            vision = visionField.text.trim().ifBlank { "*(no vision)*" }
+
+            // Step 4: steps (loop)
+            while (true) {
+                val nameField = JBTextField(40)
+                val descField = JBTextField(40)
+                val stepPanel = JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    add(JLabel("Step ${steps.size + 1} name (leave empty to finish):"))
+                    add(nameField)
+                    add(JLabel("Description (optional):"))
+                    add(descField)
+                }
+                val stepDialog = DialogBuilder(project).apply {
+                    setTitle("Full Init (4/5) — Add step / phase")
+                    setCenterPanel(stepPanel); addOkAction(); addCancelAction()
+                }
+                if (!stepDialog.showAndGet()) break
+                val name = nameField.text.trim()
+                if (name.isBlank()) break
+                steps.add(name to descField.text.trim())
+            }
         }
 
-        // Step 5: first task
-        val input = askContextInput(project, "Init (5/5) — First Task") ?: return
+        // Last step: first task
+        val taskStepNum = if (isQuick) 3 else 5
+        val taskTotal = if (isQuick) 3 else 5
+        val input = askContextInput(project, "${if (isQuick) "Quick" else "Full"} Init ($taskStepNum/$taskTotal) — First Task") ?: return
 
         TemplateProvider.scaffoldInit(aiContextRoot, profile, projectContext, vision, input.title, input.description, input.todos, steps)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
@@ -103,7 +122,8 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
 
         DddNotifications.showInfo(
             project, "DDD initialized ✅",
-            "Stack: <b>${DddDetector.check(project).stack.label}</b> — Profile: <b>${profile.name.lowercase()}</b>"
+            "Stack: <b>${DddDetector.check(project).stack.label}</b> — Profile: <b>${profile.name.lowercase()}</b>" +
+            if (isQuick) " — Quick mode: fill vision.md before working with the agent" else ""
         )
     }
 
@@ -220,7 +240,7 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
         val stepChoices = listOf(noneLabel) + pendingSteps.map { "${it.name}  —  ${it.desc}" }
         val stepList = JBList(stepChoices).apply { selectedIndex = 0 }
         val stepDialog = DialogBuilder(project).apply {
-          setTitle("New Task (1/3) — Was a step just completed?")
+          setTitle("New Task (1/4) — Was a step just completed?")
           setCenterPanel(JScrollPane(stepList))
           addOkAction(); addCancelAction()
         }
@@ -228,10 +248,34 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
         val selectedLabel = stepList.selectedValue ?: noneLabel
         val completedStep = if (selectedLabel == noneLabel) "" else pendingSteps.getOrNull(stepList.selectedIndex - 1)?.name ?: ""
 
-        // New task
-        val input = askContextInput(project, "New Tasks (2/3)") ?: return
+        // Which spec files to delete? — multi-select, all checked by default
+        val specDir = File(aiContextRoot, "tasks/specification")
+        val specsToDelete = mutableListOf<String>()
+        if (specDir.exists()) {
+            val specFiles = specDir.listFiles()
+                ?.filter { it.name != ".gitkeep" && !it.name.startsWith("permanent-") && it.name.endsWith(".md") }
+                ?.map { it.name }
+                ?: emptyList()
+            if (specFiles.isNotEmpty()) {
+                val specList = JBList(specFiles).apply {
+                    selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+                    // select all by default
+                    setSelectionInterval(0, specFiles.size - 1)
+                }
+                val specDialog = DialogBuilder(project).apply {
+                    setTitle("New Task (2/4) — Which spec files to delete? (deselect to keep)")
+                    setCenterPanel(JScrollPane(specList))
+                    addOkAction(); addCancelAction()
+                }
+                if (!specDialog.showAndGet()) return
+                specsToDelete.addAll(specList.selectedValuesList)
+            }
+        }
 
-        TemplateProvider.scaffoldNewTask(aiContextRoot, completedStep, input.title, input.description, input.todos)
+        // New task
+        val input = askContextInput(project, "New Task (3/4)") ?: return
+
+        TemplateProvider.scaffoldNewTask(aiContextRoot, completedStep, input.title, input.description, input.todos, specsToDelete)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
         DddToolWindowFactory.refresh(project)
 

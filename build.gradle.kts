@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "ai.documentationfirst"
-version = "1.0.0"
+version = "1.0.1"
 
 kotlin {
     jvmToolchain(17)
@@ -31,11 +31,12 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         name = "Documentation First - DDD2"
-        version = "1.0.0"
+        version = "1.0.1"
         description = """
-            Make Documentation-Driven Development a first-class AI citizen of your IDE.
-            Auto-detects .ai_context/, scaffolds templates per stack, and provides
-            a DDD tool window to manage all your context files.
+            Make your documentation a superpower contextual memory for your AI agent.
+            Documentation-Driven Development v2 for agentic AI: auto-detects .ai_context/,
+            scaffolds templates per stack, and provides a DDD tool window
+            to manage all your context files.
         """.trimIndent()
 
         ideaVersion {

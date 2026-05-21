@@ -30,7 +30,7 @@ class TemplateProviderTest {
         assertTrue(File(root, "README.md").exists())
         assertTrue(File(root, "CONTRACT.md").exists())
         assertTrue(File(root, "CONTEXT.md").exists())
-        assertTrue(File(root, "context.json").exists())
+        assertTrue(File(root, "dev-context.json").exists())
         assertTrue(File(root, "vision.md").exists())
         assertTrue(File(root, "tasks/done").exists())
         assertTrue(File(root, "tasks/specification").exists())
@@ -53,7 +53,7 @@ class TemplateProviderTest {
     }
 
     @Test
-    fun `scaffoldInit writes task title and description in context json`(@TempDir tmp: Path) {
+    fun `scaffoldInit writes task title and description in dev-context json`(@TempDir tmp: Path) {
         val root = tmp.resolve(".ai_context").toFile()
         TemplateProvider.scaffoldInit(
             root, AgentProfile.STRICT,
@@ -61,7 +61,7 @@ class TemplateProviderTest {
             "My Title", "My Desc", emptyList(), emptyList()
         )
 
-        val json = File(root, "context.json").readText()
+        val json = File(root, "dev-context.json").readText()
         assertTrue(json.contains("\"title\":\"My Title\""))
         assertTrue(json.contains("\"description\":\"My Desc\""))
         assertTrue(json.contains("\"startedAt\""))
@@ -165,6 +165,20 @@ class TemplateProviderTest {
         assertEquals(1, occurrences, "Agent header must not be duplicated")
     }
 
+    @Test
+    fun `scaffoldInit creates spec file for first task`(@TempDir tmp: Path) {
+        val root = tmp.resolve(".ai_context").toFile()
+        TemplateProvider.scaffoldInit(
+            root, AgentProfile.STRICT,
+            "Context", "Vision", "My First Task", "Do the thing", emptyList(), emptyList()
+        )
+
+        assertTrue(File(root, "tasks/specification/spec-my-first-task.md").exists())
+        val spec = File(root, "tasks/specification/spec-my-first-task.md").readText()
+        assertTrue(spec.contains("My First Task"))
+        assertTrue(spec.contains("Do the thing"))
+    }
+
     // ── scaffoldNewTask ───────────────────────────────────────────────────────
 
     @Test
@@ -228,14 +242,63 @@ class TemplateProviderTest {
     }
 
     @Test
-    fun `scaffoldNewTask writes new context json`(@TempDir tmp: Path) {
+    fun `scaffoldNewTask writes new dev-context json`(@TempDir tmp: Path) {
         val root = tmp.resolve(".ai_context").toFile()
         defaultInit(root)
 
         TemplateProvider.scaffoldNewTask(root, "", "Fresh start", "New desc", emptyList())
 
-        val json = File(root, "context.json").readText()
+        val json = File(root, "dev-context.json").readText()
         assertTrue(json.contains("Fresh start"))
+    }
+
+    @Test
+    fun `scaffoldNewTask only deletes selected specs`(@TempDir tmp: Path) {
+        val root = tmp.resolve(".ai_context").toFile()
+        defaultInit(root)
+        File(root, "tasks/specification/spec-a.md").writeText("# A")
+        File(root, "tasks/specification/spec-b.md").writeText("# B")
+
+        TemplateProvider.scaffoldNewTask(root, "", "New task", "Desc", emptyList(), listOf("spec-a.md"))
+
+        assertFalse(File(root, "tasks/specification/spec-a.md").exists(), "spec-a.md should be deleted")
+        assertTrue(File(root, "tasks/specification/spec-b.md").exists(), "spec-b.md should be kept")
+    }
+
+    @Test
+    fun `scaffoldNewTask creates spec file for new task`(@TempDir tmp: Path) {
+        val root = tmp.resolve(".ai_context").toFile()
+        defaultInit(root)
+
+        TemplateProvider.scaffoldNewTask(root, "", "Implement Login", "Auth flow", emptyList())
+
+        assertTrue(File(root, "tasks/specification/spec-implement-login.md").exists())
+        val spec = File(root, "tasks/specification/spec-implement-login.md").readText()
+        assertTrue(spec.contains("Implement Login"))
+        assertTrue(spec.contains("Auth flow"))
+    }
+
+    @Test
+    fun `scaffoldNewTask appends retrospective to completed step file`(@TempDir tmp: Path) {
+        val root = tmp.resolve(".ai_context").toFile()
+        TemplateProvider.scaffoldInit(
+            root, AgentProfile.STRICT, "Context", "Vision",
+            "First task", "Desc", emptyList(), listOf("Phase 1 Core" to "Core work")
+        )
+
+        TemplateProvider.scaffoldNewTask(root, "Phase 1 Core", "Next task", "Desc", emptyList())
+
+        val stepContent = File(root, "steps/phase-1-core.md").readText()
+        assertTrue(stepContent.contains("Retrospective"), "Step file should contain retrospective")
+        assertTrue(stepContent.contains("What worked"))
+        assertTrue(stepContent.contains("What blocked"))
+    }
+
+    @Test
+    fun `contractMd contains session close protocol`(@TempDir tmp: Path) {
+        val content = TemplateProvider.contractMd(AgentProfile.STRICT)
+        assertTrue(content.contains("lastSession"), "CONTRACT must contain session close protocol")
+        assertTrue(content.contains("blocker"))
     }
 
     @Test
