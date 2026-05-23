@@ -4,6 +4,7 @@ import ai.documentationfirst.ddd.actions.NewDocumentAction
 import ai.documentationfirst.ddd.actions.NewSkillAction
 import ai.documentationfirst.ddd.actions.NewTaskAction
 import ai.documentationfirst.ddd.actions.NewVisionAction
+import ai.documentationfirst.ddd.actions.Refresh
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -107,12 +108,17 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
             val buttonsPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
                 isOpaque = false
-                add(makeToolbarButton("+ New Vision") {
+                add(makeToolbarButton("↺ Refresh") {
+                    ActionManager.getInstance().tryToExecute(
+                        Refresh(), null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
+                    )
+                })
+                add(makeToolbarButton("⚡ New Vision") {
                     ActionManager.getInstance().tryToExecute(
                         NewVisionAction(), null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
                     )
                 })
-                add(makeToolbarButton("↺ New Tasks") {
+                add(makeToolbarButton("✔ New Task") {
                     ActionManager.getInstance().tryToExecute(
                         NewTaskAction(), null, topPanel, ActionPlaces.TOOLWINDOW_CONTENT, true
                     )
@@ -193,7 +199,7 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                                 }
                             })
                         }
-                        if (menu.componentCount > 0) menu.show(this@apply, e.x, e.y)
+                        menu.show(this@apply, e.x, e.y)
                     }
                 }
             })

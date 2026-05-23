@@ -31,6 +31,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>1.0.1</b><br/>
+        <ul>
+            <li>Steps retrospective Task</li>
+            <li>Spec file auto-created</li>
+            <li>Selective spec deletion</li>
+            <li>Quick init mode</li>
+            <li>generated `CONTRACT.md` now includes a session close protocol</li>
+            <li>Step list in New Task</li>
+            <li>New Vision and New Task actions</li>
+            <li>All UI labels translated to English</li>
+        </ul>
         <b>1.0.0</b><br/>
         <ul>
             <li>Initial release</li>
@@ -73,6 +84,12 @@
                 class="ai.documentationfirst.ddd.actions.InitContextAction"
                 text="Initialize Context"
                 description="Initialize .ai_context/ with templates, vision, steps and first task"
+            />
+            <action
+                    id="ddd.refresh"
+                    class="ai.documentationfirst.ddd.actions.Refresh"
+                    text="Refresh"
+                    description="Refresh the panel view"
             />
             <action
                 id="ddd.newVision"

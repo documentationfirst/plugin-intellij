@@ -133,9 +133,28 @@ class InitContextAction : AnAction(AllIcons.Actions.AddFile) {
     }
 }
 
+// ── Refresh ────────────────────────────────────────────────────────────────
+
+class Refresh : AnAction(AllIcons.Actions.Refresh) {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val aiContextRoot = requireAiContextRoot(project) ?: return
+
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(aiContextRoot)?.refresh(true, true)
+        DddToolWindowFactory.refresh(project)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val root = e.project?.basePath ?: return
+        e.presentation.isEnabledAndVisible = File(root, ".ai_context").exists()
+    }
+}
+
 // ── New Vision ────────────────────────────────────────────────────────────────
 
-class NewVisionAction : AnAction(AllIcons.Actions.Refresh) {
+class NewVisionAction : AnAction(AllIcons.Actions.Execute) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -248,7 +267,7 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
         val selectedLabel = stepList.selectedValue ?: noneLabel
         val completedStep = if (selectedLabel == noneLabel) "" else pendingSteps.getOrNull(stepList.selectedIndex - 1)?.name ?: ""
 
-        // Which spec files to delete? — multi-select, all checked by default
+        // Which spec files to keep? — multi-select, zero kept by default
         val specDir = File(aiContextRoot, "tasks/specification")
         val specsToDelete = mutableListOf<String>()
         if (specDir.exists()) {
@@ -259,11 +278,9 @@ class NewTaskAction : AnAction(AllIcons.Actions.Execute) {
             if (specFiles.isNotEmpty()) {
                 val specList = JBList(specFiles).apply {
                     selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
-                    // select all by default
-                    setSelectionInterval(0, specFiles.size - 1)
                 }
                 val specDialog = DialogBuilder(project).apply {
-                    setTitle("New Task (2/4) — Which spec files to delete? (deselect to keep)")
+                    setTitle("New Task (2/4) — Which spec files to keep? (select to keep)")
                     setCenterPanel(JScrollPane(specList))
                     addOkAction(); addCancelAction()
                 }

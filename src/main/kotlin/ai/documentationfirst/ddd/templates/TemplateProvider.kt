@@ -16,7 +16,7 @@ enum class AgentProfile(val label: String, val description: String) {
   PERMISSIVE(
     "Permissive",
     "All terminal commands allowed. Agent may rename/delete with caution."
-  ),
+  )
 }
 
 object TemplateProvider {
@@ -448,10 +448,8 @@ object TemplateProvider {
     """.trimIndent()
   }
 
-  private fun newTaskSpecFilename(title: String): String =
-    "spec-" + title.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "") + ".md"
-    val escaped = { s: String -> s.replace("\"", "\\\"") }
-    return """{"title":"${escaped(title)}","description":"${escaped(description)}","startedAt":"${nowIso()}"}"""
+  private fun newTaskSpecFilename(title: String): String {
+    return "spec-" + title.lowercase().replace(Regex("\\s+"), "-").replace(Regex("[^a-z0-9-]"), "") + ".md"
   }
 
   private fun historyLine(type: String, title: String, completedStep: String = "", vision: String = ""): String {
@@ -630,7 +628,7 @@ object TemplateProvider {
 
     // specification/ — only delete explicitly selected files
     File(aiContextRoot, "tasks/specification").listFiles()
-      ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" && specsToDelete.contains(it.name) }
+      ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" && !specsToDelete.contains(it.name) }
       ?.forEach { it.delete() }
 
     // technical/ — clear non-permanent
