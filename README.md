@@ -4,7 +4,7 @@
     <img src="d-ai.jpg" alt="Documentation-Driven Development" width="260" style="border-radius: 50%; overflow: hidden;" />
 </div>
 
-[![JetBrains Marketplace](https://img.shields.io/badge/JetBrains-Marketplace)]([https://plugins.jetbrains.com](https://plugins.jetbrains.com/plugin/31829-documentation-first--ddd2))
+[![JetBrains Marketplace](https://img.shields.io/badge/JetBrains-Marketplace?style=flat-square)]([https://plugins.jetbrains.com](https://plugins.jetbrains.com/plugin/31829-documentation-first--ddd2))
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 [![Website](https://img.shields.io/badge/website-documentationfirst.ai-58a6ff?style=flat-square)](https://documentationfirst.ai)
 
