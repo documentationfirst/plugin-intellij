@@ -1,19 +1,10 @@
-# For AI Agent :
-
-Read all [context](./.ai_context) for context and needs.
-L'agent doit appliquer les conditions spécifiées par le fichier CONTRACT.md
-Le contexte du développement actuel est présenté dans CONTEXT.md et tous les fichiers du répertoire "documents".
-Le sous-répertoire "done" contiendra des fichiers MD rédigés par l'agent expliquant ce qui a été dans ce contexte.
-Le sous-répertoire "technical" contient des bonnes pratiques et conseils techniques dans ce contexte.
-Le sous-répertoire "specification" contient des détails fonctionnels et d'architecture, ainsi que les besoins détaillés.
-
-# DDD — Documentation-Driven Development for AI (JetBrains Plugin)
+# DDD2 — Documentation-Driven Development for AI (JetBrains Plugin)
 
 <div align="center">
     <img src="d-ai.jpg" alt="Documentation-Driven Development" width="260" style="border-radius: 50%; overflow: hidden;" />
 </div>
 
-[![JetBrains Marketplace](https://img.shields.io/badge/JetBrains%20Marketplace-coming%20soon-fe2857?style=flat-square)](https://plugins.jetbrains.com)
+[![JetBrains Marketplace](https://img.shields.io/badge/JetBrains%20Marketplace)]([https://plugins.jetbrains.com](https://plugins.jetbrains.com/plugin/31829-documentation-first--ddd2))
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 [![Website](https://img.shields.io/badge/website-documentationfirst.ai-58a6ff?style=flat-square)](https://documentationfirst.ai)
 
