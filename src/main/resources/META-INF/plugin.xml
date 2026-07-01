@@ -13,6 +13,10 @@
         Structures collaboration between developer and AI agent through a living <code>.ai_context/</code> folder.<br/>
         Agent-agnostic: works with JetBrains AI, GitHub Copilot, Cursor, or any assistant.<br/><br/>
 
+        <b>Spec-Driven Development (SDD), extended:</b><br/>
+        DDD engulfs SDD — the Markdown specs produced by tools like spec-kit, Kiro, or Tessl drop straight
+        into <code>.ai_context/</code>, where DDD hosts, versions, and compounds them for the whole project lifecycle.<br/><br/>
+
         <b>How it works:</b><br/>
         Write specs → AI reads context → AI implements → AI writes done report → commit → next task<br/><br/>
 

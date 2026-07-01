@@ -5,6 +5,7 @@ import ai.documentationfirst.ddd.actions.NewSkillAction
 import ai.documentationfirst.ddd.actions.NewTaskAction
 import ai.documentationfirst.ddd.actions.NewVisionAction
 import ai.documentationfirst.ddd.actions.Refresh
+import ai.documentationfirst.ddd.actions.TogglePermanentAction
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -161,7 +162,7 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                     if (vFile != null) FileEditorManager.getInstance(project).openFile(vFile, true)
                 }
             }
-            // Right-click context menu on directories
+            // Right-click context menu on directories and markdown files
             addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mousePressed(e: java.awt.event.MouseEvent) {
                     if (!SwingUtilities.isRightMouseButton(e)) return
@@ -200,10 +201,40 @@ class DddToolWindowPanel(private val project: Project) : SimpleToolWindowPanel(t
                             })
                         }
                         menu.show(this@apply, e.x, e.y)
+                    } else if (isPermanentEligibleFile(file)) {
+                        val menu = JPopupMenu()
+                        menu.add(JMenuItem(if (file.name.startsWith("permanent-")) "Make non-permanent" else "Mark as permanent").apply {
+                            icon = if (file.name.startsWith("permanent-")) AllIcons.Actions.Cancel else AllIcons.Actions.Commit
+                            addActionListener {
+                                TogglePermanentAction(file, project).let { action ->
+                                    ActionManager.getInstance().tryToExecute(action, null, null, ActionPlaces.POPUP, true)
+                                }
+                            }
+                        })
+                        menu.show(this@apply, e.x, e.y)
                     }
                 }
             })
         }
+    }
+
+    private fun isPermanentEligibleFile(file: File): Boolean {
+        if (!file.isFile || file.extension != "md") return false
+        val aiContextRoot = project.basePath?.let { File(it, ".ai_context") } ?: return false
+        val parent = file.parentFile ?: return false
+        val allowedDirs = listOf(
+            File(aiContextRoot, "skills"),
+            File(aiContextRoot, "tasks/done"),
+            File(aiContextRoot, "tasks/specification"),
+            File(aiContextRoot, "tasks/technical")
+        )
+        return allowedDirs.any { safeCanonical(parent) == safeCanonical(it) }
+    }
+
+    private fun safeCanonical(file: File): File = try {
+        file.canonicalFile
+    } catch (_: Exception) {
+        file.absoluteFile
     }
 
     private fun buildTreeNode(): DefaultMutableTreeNode {

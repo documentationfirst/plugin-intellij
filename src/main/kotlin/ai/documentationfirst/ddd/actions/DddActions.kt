@@ -350,3 +350,44 @@ class NewSkillAction(private val skillsDir: File, private val project: com.intel
     }
 }
 
+// ── Toggle Permanent (right-click on files in tree) ───────────────────────────
+
+class TogglePermanentAction(private val file: File, private val project: com.intellij.openapi.project.Project) :
+    AnAction(
+        if (file.name.startsWith("permanent-")) "Make non-permanent" else "Mark as permanent",
+        null,
+        if (file.name.startsWith("permanent-")) AllIcons.Actions.Cancel else AllIcons.Actions.Commit
+    ) {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun actionPerformed(e: AnActionEvent) {
+        if (!file.exists() || !file.isFile) return
+
+        val parent = file.parentFile ?: return
+        val targetName = if (file.name.startsWith("permanent-")) {
+            file.name.removePrefix("permanent-")
+        } else {
+            "permanent-${file.name}"
+        }
+        val target = File(parent, targetName)
+
+        if (target.exists()) {
+            DddNotifications.showError(project, "Cannot rename <code>${file.name}</code>: <code>$targetName</code> already exists.")
+            return
+        }
+
+        val renamed = file.renameTo(target)
+        if (!renamed) {
+            DddNotifications.showError(project, "Cannot rename <code>${file.name}</code>.")
+            return
+        }
+
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(parent)?.refresh(true, true)
+        openFile(project, target)
+        DddToolWindowFactory.refresh(project)
+
+        val status = if (target.name.startsWith("permanent-")) "Permanent" else "Non-permanent"
+        DddNotifications.showInfo(project, "File updated ✅", "$status: <b>${target.name.removePrefix("permanent-")}</b>")
+    }
+}
+

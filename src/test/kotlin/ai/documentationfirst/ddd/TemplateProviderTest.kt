@@ -193,6 +193,17 @@ class TemplateProviderTest {
     }
 
     @Test
+    fun `scaffoldNewTask preserves permanent files in tasks done`(@TempDir tmp: Path) {
+        val root = tmp.resolve(".ai_context").toFile()
+        defaultInit(root)
+        File(root, "tasks/done/permanent-handoff.md").writeText("# Handoff")
+
+        TemplateProvider.scaffoldNewTask(root, "", "New task", "New desc", emptyList())
+
+        assertTrue(File(root, "tasks/done/permanent-handoff.md").exists())
+    }
+
+    @Test
     fun `scaffoldNewTask removes non-permanent files in tasks specification`(@TempDir tmp: Path) {
         val root = tmp.resolve(".ai_context").toFile()
         defaultInit(root)
