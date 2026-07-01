@@ -84,7 +84,7 @@ object TemplateProvider {
         ├── skills/                ← permanent agent behaviours (permanent-* kept)
         ├── steps/                 ← roadmap phases / features (permanent)
         └── tasks/
-            ├── done/              ← agent summaries (contextual)
+            ├── done/              ← agent summaries (permanent-* kept)
             ├── specification/     ← functional specs (permanent-* kept)
             └── technical/         ← technical decisions (permanent-* kept)
         ```
@@ -621,7 +621,7 @@ object TemplateProvider {
   }
 
   private fun clearTasks(aiContextRoot: File, specsToDelete: List<String> = emptyList()) {
-    // done/ — always cleared entirely
+    // done/ — clear non-permanent reports, keep permanent-* handoff/reference reports
     File(aiContextRoot, "tasks/done").listFiles()
       ?.filter { !it.name.startsWith("permanent-") && it.name != ".gitkeep" }
       ?.forEach { it.delete() }
